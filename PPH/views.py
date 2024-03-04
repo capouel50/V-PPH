@@ -2,7 +2,7 @@ import logging
 import time
 from datetime import date
 import jwt
-import serial
+#import serial
 from django.shortcuts import get_object_or_404
 from django.db.models.functions import ExtractMonth, ExtractYear, ExtractWeek
 from django.db.models import Count, Sum
@@ -431,30 +431,14 @@ class CategorieMatiereViewSet(viewsets.ModelViewSet):
 class BalancesViewSet(viewsets.ModelViewSet):
     queryset = Balances.objects.all()
     serializer_class = BalancesSerializer
-
+"""
 class InstructionsBalancesViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint pour les instructions de balances.
-    Permet d'envoyer une instruction à une balance et de recevoir la réponse.
-
-    Methods:
-    - envoyer_instruction(request, pk): Envoie une instruction à une balance spécifiée par son ID et renvoie la réponse.
-    - list(request): Récupère la liste de toutes les instructions de balances disponibles.
-    """
-
+   
     queryset = InstructionsBalances.objects.all()
     serializer_class = InstructionsBalancesSerializer
 
     def recuperer_liste_commandes(self, request):
-        """
-        Récupère la liste de toutes les commandes disponibles sur la balance.
-
-        Args:
-        - request: Objet de requête HTTP.
-
-        Returns:
-        - Response avec la liste des commandes disponibles sur la balance.
-        """
+       
         ser = serial.Serial('COM1', 9600)  # Remplacez 'COM1' par le port série approprié
         ser.timeout = 2  # Temps d'attente pour la réponse de la balance
 
@@ -468,16 +452,7 @@ class InstructionsBalancesViewSet(viewsets.ModelViewSet):
         return Response(liste_commandes)
 
     def envoyer_et_recevoir(self, instruction):
-        """
-        Envoie une instruction à une balance et renvoie le poids et l'unité de la réponse.
-
-        Args:
-        - instruction: Instruction à envoyer à la balance.
-
-        Returns:
-        - poids: Poids retourné par la balance.
-        - unite: Unité de mesure du poids retourné par la balance.
-        """
+        
         ser = serial.Serial('COM1', 9600)  # Remplacez 'COM1' par le port série approprié
         ser.write(instruction.encode())
         reponse = ser.readline().decode().strip()
@@ -496,34 +471,17 @@ class InstructionsBalancesViewSet(viewsets.ModelViewSet):
         return poids, unite
 
     def envoyer_instruction(self, request, pk=None):
-        """
-        Envoie une instruction à une balance spécifiée par son ID et renvoie la réponse.
-
-        Args:
-        - request: Objet de requête HTTP.
-        - pk: Clé primaire de l'instruction de balance à envoyer.
-
-        Returns:
-        - Response avec la réponse de la balance à l'instruction.
-        """
+        
         instruction = get_object_or_404(InstructionsBalances, pk=pk)
         reponse = self.envoyer_et_recevoir(instruction.nom_instruction)
         return Response({'reponse': reponse})
 
     def list(self, request):
-        """
-        Récupère la liste de toutes les instructions de balances disponibles.
-
-        Args:
-        - request: Objet de requête HTTP.
-
-        Returns:
-        - Response avec la liste des instructions de balances et leurs détails.
-        """
+        
         queryset = InstructionsBalances.objects.all()
         serializer = InstructionsBalancesSerializer(queryset, many=True)
         return Response(serializer.data)
-
+"""
 
 class FormeViewSet(viewsets.ModelViewSet):
     queryset = Forme.objects.all()
