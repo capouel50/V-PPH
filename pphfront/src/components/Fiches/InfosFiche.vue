@@ -19,22 +19,14 @@
           <q-card class="q-mb-md bg-op-8">
           <q-card-section>
 
-            <div class="row">
-              <div class="col-10 offset-1  text-subtitle1 text-cyan-4 text-center">
+            <q-item clickable class="row">
+              <q-item-section class="text-subtitle1 text-center"
+                              :class="materiel ? 'text-orange-4' : 'text-cyan-4'"
+                              @click="materiel = !materiel"
+              >
                 Matériel
-              </div>
-              <div class="col-1">
-                <q-btn
-                  color="grey"
-                  class="hover-effect"
-                  round
-                  flat
-                  dense
-                  :icon="materiel ? 'keyboard_arrow_up' : 'keyboard_arrow_down'"
-                  @click="materiel = !materiel"
-                />
-              </div>
-            </div>
+              </q-item-section>
+            </q-item>
 
           </q-card-section>
 
@@ -59,26 +51,15 @@
         <div v-if="this.epis.length">
           <q-card class="q-mb-md bg-op-8">
           <q-card-section>
-
-            <div class="row">
-              <div class="col-1">
-                <q-icon  class="fade-blink" name="warning" color="red-4" size="sm"/>
-              </div>
-              <div class="col-10 text-subtitle1 text-cyan-4 text-center">
+            <q-item clickable class="row">
+              <q-icon  class="fade-blink" name="warning" color="red-4" size="sm"/>
+              <q-item-section class="text-subtitle1 text-center q-mr-md"
+                              :class="expanded ? 'text-orange-4' : 'text-cyan-4'"
+                              @click="expanded = !expanded"
+              >
                 {{ this.epis.length }} EPI
-              </div>
-              <div class="col-1">
-                <q-btn
-                  color="grey"
-                  class="hover-effect q-pa-none"
-                  round
-                  flat
-                  dense
-                  :icon="expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down'"
-                  @click="expanded = !expanded"
-                />
-              </div>
-            </div>
+              </q-item-section>
+            </q-item>
 
           </q-card-section>
 
@@ -104,22 +85,14 @@
           <q-card class="bg-op-8">
           <q-card-section>
 
-            <div class="row">
-              <div class="col-10 offset-1 text-subtitle1 text-cyan-4 text-center">
+            <q-item clickable class="row">
+              <q-item-section class="text-subtitle1 text-center"
+                              :class="modeOp ? 'text-orange-4' : 'text-cyan-4'"
+                              @click="modeOp = !modeOp"
+              >
                 Mode opératoire
-              </div>
-              <div class="col-1">
-                <q-btn
-                  color="grey"
-                  class="hover-effect"
-                  round
-                  flat
-                  dense
-                  :icon="modeOp ? 'keyboard_arrow_up' : 'keyboard_arrow_down'"
-                  @click="modeOp = !modeOp"
-                />
-              </div>
-            </div>
+              </q-item-section>
+            </q-item>
 
           </q-card-section>
 
@@ -141,9 +114,11 @@
         <q-card class="bg-op-8">
           <q-card-section>
 
-            <div class="text-subtitle1 text-cyan-4 text-center">
-              Composition de la formule
-            </div>
+            <q-item>
+              <q-item-section class="text-subtitle1 text-cyan-4 text-center">
+                Composition de la formule
+              </q-item-section>
+            </q-item>
 
           </q-card-section>
 
@@ -151,8 +126,8 @@
 
           <q-card-section>
             <q-list v-for="compo in composition" :key="compo.id">
-              <q-item clickable class="row justify-evenly"
-                      @mouseover="updateQteTheory(compo)"
+              <q-item clickable class="row justify-evenly" :class="activeCompo === compo ? 'bg-cyan-1' : ''"
+                      @click="activeCompo = compo; appareils(); updateQteTheory(compo)"
               >
                 <q-item-section class="col-4 q-pl-sm text-cyan-4">
                   {{ compo.matiere.nom}}
@@ -289,25 +264,29 @@
       </div>
 
       <div class="col-2">
-        <div>
+        <div v-if="activeCompo">
           <q-card class="bg-op-8">
           <q-card-section class="q-pt-none q-pb-xs">
-
-            <q-select
-              class="q-my-none q-py-none"
-              v-model="balance"
-              color="cyan-4"
-              label="Balance"
-              :options="allBalancesLabel"
-              option-label="label"
-              @change="handleInput"
-            />
+            <q-item>
+              <q-item-section>
+                <q-select
+                  class="q-mb-xs q-py-none"
+                  v-model="appareil"
+                  color="cyan-4"
+                  :label="activeCompo.type_appareil.nom"
+                  :options="typesAppareil"
+                  option-label="nom"
+                  option-value="id"
+                />
+              </q-item-section>
+            </q-item>
 
           </q-card-section>
 
           <q-separator/>
 
           <q-card-section>
+            <div class="text-cyan-4 text-subtitle2 text-center">{{ activeCompo.matiere.nom}}</div>
             <div class="row justify-center" :class="getDeviationPercentageColor()">
               <div class="text-center text-h6 text-cyan-1" >
                 {{ this.selectedCompoPesee }}{{ qteTheory.unite }} / {{ qteTheory.value }}{{ qteTheory.unite }}
@@ -319,29 +298,36 @@
               </div>
             </div>
           </q-card-section>
-
-          <q-separator/>
-
-          <q-card-section>
-            <q-card-actions class="justify-center">
-              <q-btn-group>
-                <q-btn
-                flat
-                color="green-4"
-                label="Valider"
-                class="hover-effect-succes"
-                @click="saveData"
-              />
-              <q-btn
-                flat
-                color="cyan-4"
-                label="Tare"
-                class="hover-effect"
-                @click="Tare"
-              />
-              </q-btn-group>
-            </q-card-actions>
+            <q-separator v-if="appareil && btns.length > 0"/>
+          <q-card-section v-if="appareil && btns.length > 0">
+            <q-item clickable class="row" @click="buttons = !buttons">
+                <q-item-section
+                  class="text-center text-subtitle1"
+                  :class="buttons ? 'text-orange-4' : 'text-cyan-4'"
+                >
+                  Fonctions
+                </q-item-section>
+            </q-item>
           </q-card-section>
+          <q-slide-transition>
+            <div v-show="buttons">
+              <q-separator/>
+              <q-card-section class="row justify-evenly">
+                <div v-for="btn in btns" :key="btn.id">
+                  <div class="col-4">
+                    <q-btn
+                      flat
+                      :label="btn.action"
+                      class="hover-effect"
+                      color="cyan-4"
+                  >
+                    <q-tooltip>{{ btn.description}}</q-tooltip>
+                  </q-btn>
+                  </div>
+                </div>
+              </q-card-section>
+            </div>
+          </q-slide-transition>
 
         </q-card>
         </div>
@@ -373,6 +359,7 @@ export default {
 
   data() {
     return {
+      activeCompo: null,
       loading: false,
       id: null,
       fiche: [],
@@ -390,8 +377,8 @@ export default {
         unite: null,
       },
       selectedCompoPesee: null,
-      balances: [],
-      balance: null,
+      typesAppareil: [],
+      appareil: null,
       lastId: null,
       reception: [],
       num_reception: null,
@@ -400,6 +387,8 @@ export default {
       certificatReception: null,
       echantillon: false,
       qte: null,
+      btns: [],
+      buttons: false,
     };
   },
 
@@ -407,18 +396,9 @@ export default {
     ...mapGetters('fiches', ['allFiches', 'allParametresFiches']),
     ...mapGetters('formules', ['allCompositions', 'allParametresFormules', 'allArticlesFormules']),
     ...mapGetters('epi', ['allEpis', 'allEpisFormules']),
-    ...mapGetters('balances', ['allBalances', 'allInstructionsBalances']),
+    ...mapGetters('appareils', ['allAppareils', 'allInstructionsAppareils']),
     ...mapGetters('demandes', ['allDemandes', 'allParametresDemandes']),
     ...mapGetters('matieresPremieres', ['allReceptions']),
-
-    allBalancesLabel() {
-      // Calculer le libellé complet avec le nom et le fournisseur
-      return this.allBalances.map(balance => ({
-        ...balance,
-        label: `${balance.nom}`,
-        id: balance.id,
-      }));
-    },
   },
 
   async created() {
@@ -428,7 +408,8 @@ export default {
       this.loadParametresFormules(),
       this.loadEpisFormules(),
       this.loadArticlesFormules(),
-      this.loadBalances(),
+      this.loadAppareils(),
+      this.loadInstructionsAppareils(),
     ]);
     const allFiches = this.allFiches;
     this.lastId = Math.max(...allFiches.map(fiche => fiche.id));
@@ -469,7 +450,6 @@ export default {
     this.parametres = this.allParametresFiches.filter(param => param.num_fiche === this.fiche.id);
     this.epis = this.allEpisFormules.filter(epi => epi.num_formule === this.fiche.prep.id);
     this.articles = this.allArticlesFormules.filter(article => article.num_formule === this.fiche.prep.id);
-    this.balances = this.allBalances;
     this.composition = this.allCompositions
     .filter(compo => compo.num_formule === this.fiche.prep.id)
     .map(compo => {
@@ -497,15 +477,29 @@ export default {
     this.loading= true;
   },
 
+  watch: {
+    appareil(newValue) {
+        this.handleInput(newValue);
+    },
+  },
+
   methods: {
     ...mapActions('fiches', ['loadFiches', 'loadParametresFiches', 'loadLastFicheId', 'addFiche', 'addParametresValues']),
     ...mapActions('formules', ['loadCompositions', 'loadParametresFormules', 'loadArticlesFormules',]),
     ...mapActions('epi', ['loadEpis', 'loadEpisFormules']),
     ...mapActions('demandes', ['loadDemandes', 'loadParametresDemandes', 'loadLastDemandeId']),
-    ...mapActions('balances', ['loadBalances', 'loadInstructionsBalances', 'getCalibration']),
+    ...mapActions('appareils', ['loadAppareils', 'loadInstructionsAppareils']),
     ...mapActions('notifications', ['showNotification']),
     ...mapActions('matieresPremieres', ['loadReceptions', 'addCertificat']),
     ...mapMutations('fiches', ['ADD_FICHE', 'ADD_PARAMETRES_FICHES']),
+
+    appareils(){
+      this.typesAppareil = this.allAppareils.filter(appareil => appareil.type.nom === this.activeCompo.type_appareil.nom);
+      this.appareil = null;
+      this.btns = [];
+      this.buttons = false;
+    },
+
 
     addMatiereCertif(){
       this.addMatiereLot = true;
@@ -515,7 +509,6 @@ export default {
 
     addCertif(){
       const id = this.reception.id
-      console.log('id', id)
       const formData = {
         certificat: this.certificatReception,
         echantillon: this.echantillon,
@@ -529,7 +522,6 @@ export default {
       compo.reception = JSON.parse(JSON.stringify(reception)) || {};
       compo.reception.peremption = formatDate(peremption);
       compo.reception.isValid = true;
-      console.log('Reception', compo.reception);
       if(!compo.reception.certificat && !compo.reception.echantillon){
         this.showNotification({message: 'Aucun certificat d\'analyse, ni d\'échantillon pour le lot ' + compo.reception.lot, type: 'info'})
         this.showNotification({message: 'Réception ajoutée', type: 'success'})
@@ -566,13 +558,13 @@ export default {
       }
     },
 
-    handleInput() {
-        console.log('Input event triggered. Selected balance ID:', this.balance.id);
-        if (this.balance && this.balance.id) {
-            this.getCalibration(this.balance.id);
+    handleInput(appareil) {
+        if (appareil) {
+            this.btns = this.allInstructionsAppareils.filter(btn => btn.modele_appareil === appareil.id && btn.button === true);
         } else {
-            console.error('Invalid balance object or ID');
+            console.error('Invalid appareil object or ID');
         }
+
     },
 
     updateQteTheory(compo) {
@@ -635,9 +627,7 @@ export default {
 
 </script>
 
-<style scoped>
 
-</style>
 
 
 

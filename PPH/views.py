@@ -1,17 +1,22 @@
 import logging
 import time
 from datetime import date
+
 import jwt
-#import serial
-from django.shortcuts import get_object_or_404
-from django.db.models.functions import ExtractMonth, ExtractYear, ExtractWeek
-from django.db.models import Count, Sum
+import requests
+import serial
 from dj_rest_auth.registration.views import RegisterView
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
+from django.db import transaction
+from django.db.models import Count, Sum
+from django.db.models.functions import ExtractMonth, ExtractYear, ExtractWeek
 from django.http import HttpResponseRedirect
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
@@ -22,16 +27,15 @@ from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignat
 from rest_framework import generics
 from rest_framework import status
 from rest_framework import viewsets
-
-from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, action
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 from rest_framework_simplejwt.tokens import UntypedToken
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework.views import APIView
 
 from PPH.serializers import (
     CustomRegisterSerializer, UserFunctionSerializer, SupplierSerializer, CustomUserSerializer,
@@ -39,25 +43,92 @@ from PPH.serializers import (
     FormeReadSerializer, FormeWriteSerializer, MatierePremiereReadSerializer, MatierePremiereWriteSerializer,
     FormuleSerializer, CompositionReadSerializer, CompositionWriteSerializer,
     CatalogueSerializer, VoieSerializer, ListeSerializer, ParametresPrepSerializer, ParametresFormulesListSerializer,
-    DemandesReadSerializer, DemandesWriteSerializer, FichesReadSerializer, FichesWriteSerializer, ServiceSerializer, ParametresFormulesReadSerializer,
+    DemandesReadSerializer, DemandesWriteSerializer, FichesReadSerializer, FichesWriteSerializer, ServiceSerializer,
+    ParametresFormulesReadSerializer,
     ConditionnementSerializer, CategorieMatiereSerializer, CatalogueImportSerializer, ReceptionReadSerializer,
-    ReceptionWriteSerializer, EtablissementSerializer, ParametresDemandesReadSerializer, ParametresDemandesWriteSerializer,
-    ParametresFichesReadSerializer, ParametresFichesWriteSerializer, EpiSerializer, EpiFormulesReadSerializer, EpiFormulesWriteSerializer,
-    BalancesSerializer, FabricantsBalancesSerializer, InstructionsBalancesSerializer, ArticlesFormulesListSerializer, ArticlesFormulesReadSerializer, ArticlesFormulesWriteSerializer
+    ReceptionWriteSerializer, EtablissementSerializer, ParametresDemandesReadSerializer,
+    ParametresDemandesWriteSerializer,
+    ParametresFichesReadSerializer, ParametresFichesWriteSerializer, EpiSerializer, EpiFormulesReadSerializer,
+    EpiFormulesWriteSerializer,
+    AppareilsSerializer, FabricantsAppareilsSerializer, InstructionsAppareilsSerializer, TypeAppareilSerializer,
+    TypeCommunicationSerializer,
+    ArticlesFormulesListSerializer, ArticlesFormulesReadSerializer, ReponseInstructionsSerializer, EtapesSerializer,
+    ControlesSerializer, TypeControleReadSerializer, TypeControleWriteSerializer
 )
 from .models import CustomUser, Supplier, UserFunction, Contact, \
     TypeMatiere, UniteMesure, Forme, MatierePremiere, TypePrep, \
     Formule, Composition, Catalogue, Liste, Voie, ParametresPrep, \
     ParametresFormules, Demandes, Fiches, Service, Conditionnement, \
     CategorieMatiere, CatalogueImport, Reception, Etablissement, \
-    ParametresDemandes, ParametresFiches, Epi, EpiFormules, Balances, InstructionsBalances, FabricantsBalances, ArticlesFormules
-
-from django.http import JsonResponse
+    ParametresDemandes, ParametresFiches, Epi, EpiFormules, Appareils, \
+    InstructionsAppareils, FabricantsAppareils, ArticlesFormules, TypeAppareil, \
+    TypeCommunication, ReponseInstructions, Etapes, Controles, TypeControle
 from .utils import extract_data_from_pdf
-from django.apps import apps
-
 
 logger = logging.getLogger(__name__)
+
+from django.conf import settings
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from openai import OpenAI
+
+class ChatGPTView(APIView):
+    conversation_history = []  # Stocke l'historique de la conversation
+
+    def post(self, request, *args, **kwargs):
+        client = OpenAI(api_key=settings.OPENAI_API_KEY)
+
+        user_message = request.data.get("message")
+        if not user_message:
+            return Response({"error": "Le message ne peut pas être vide."}, status=status.HTTP_400_BAD_REQUEST)
+        conversation_history = request.session.get('conversation_history', [])
+        # Ajouter l'instruction au prompt et l'historique de la conversation
+        prompt_message = ("Je suis pharmacien hospitalier et tu es un excellent pharmacien, expert en pharmacologie, en chimie, en mathématiques. "
+                          "Tu excelles dans les méthodes de préparation et de contrôle des formules de préparations magistrales et hospitalières en tout genre."
+                          "Tu es rigoureux, méthodique et tu respectes la réglementation française en vigueur."
+                          "Tu t'appuies notamment sur les Bonnes pratiques de Fabrication, les Bonnes Pratiques de Préparations Hospitalières, la pharmacopée française et européenne, les études réalisées par les laboratoires pharmaceutiques et tous les textes règlementaires dans le domaine de la santé. ")
+
+        # Construction des messages pour l'API en incluant l'historique
+        messages = [
+            {"role": "system", "content": prompt_message}
+        ]
+        messages.extend(self.conversation_history)  # Ajoute l'historique de la conversation
+        messages.append({"role": "user", "content": user_message})  # Ajoute le message actuel de l'utilisateur
+
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4",  # Assurez-vous d'utiliser le bon modèle
+                messages=messages,
+                temperature=0.7,
+                max_tokens=1500,
+            )
+
+            gpt_response = response.choices[0].message.content
+            # Ajoute la dernière interaction à l'historique
+            conversation_history.append({"role": "user", "content": user_message})
+            conversation_history.append({"role": "assistant", "content": gpt_response})
+            request.session['conversation_history'] = conversation_history
+
+            return Response({"message": gpt_response}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            print(e)  # Pour le débogage
+            return Response({"error": e}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def get(self, request, *args, **kwargs):
+        # Récupère et retourne l'historique de la conversation stocké dans la session
+        conversation_history = request.session.get('conversation_history', [])
+        return Response({"conversation_history": conversation_history}, status=status.HTTP_200_OK)
+
+    def delete(self, request, *args, **kwargs):
+        # Efface l'historique de la conversation de la session
+        if 'conversation_history' in request.session:
+            del request.session['conversation_history']
+        return Response({"message": "L'historique de la conversation a été effacé."}, status=status.HTTP_200_OK)
+
+
+
 def reset_data(request):
     try:
         # Obtenez tous les modèles de votre application Django
@@ -259,16 +330,16 @@ class SupplierViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if self.basename == 'suppliers':
             return Supplier.objects.all()
-        elif self.basename == 'balances-supplier':
-            return FabricantsBalances.objects.all()
+        elif self.basename == 'appareils-supplier':
+            return FabricantsAppareils.objects.all()
         else:
             return Supplier.objects.none()
 
     def get_serializer_class(self):
         if self.basename == 'suppliers':
             return SupplierSerializer
-        elif self.basename == 'balances-supplier':
-            return FabricantsBalancesSerializer
+        elif self.basename == 'appareils-supplier':
+            return FabricantsAppareilsSerializer
         else:
             return SupplierSerializer
 
@@ -400,13 +471,42 @@ class ParametresFormulesViewSet(viewsets.ModelViewSet):
             return ParametresFormulesListSerializer
         return ParametresFormulesReadSerializer
 
+
 class ArticlesFormulesViewSet(viewsets.ModelViewSet):
     queryset = ArticlesFormules.objects.all()
 
     def get_serializer_class(self):
-        if self.request.method in ['POST', 'PUT']:
-            return ArticlesFormulesListSerializer
-        return ArticlesFormulesReadSerializer
+        if self.action in ['create', 'update', 'partial_update']:
+            return ArticlesFormulesListSerializer  # Sérialiseur pour les opérations standard
+        return ArticlesFormulesReadSerializer  # Sérialiseur pour la lecture
+
+    @action(detail=False, methods=['put'], url_path='update/(?P<num_formule>\d+)')
+    def update_articles_formules_bulk(self, request, num_formule=None):
+        with transaction.atomic():
+            received_article_ids = [item.get('article') for item in request.data if item.get('article')]
+
+            # Suppression des articles non présents dans la liste reçue
+            ArticlesFormules.objects.filter(num_formule=num_formule).exclude(article__id__in=received_article_ids).delete()
+
+            updated_instances_data = []
+            for item in request.data:
+                if "id" in item:
+                    # Mise à jour d'un objet existant
+                    instance = ArticlesFormules.objects.filter(id=item["id"]).first()
+                    if not instance:
+                        return Response({"error": f"Instance avec id={item['id']} non trouvée."}, status=status.HTTP_404_NOT_FOUND)
+                    serializer = self.get_serializer(instance, data=item, partial=True)
+                else:
+                    # Ajout d'un nouvel objet
+                    serializer = self.get_serializer(data=item)
+
+                if serializer.is_valid():
+                    serializer.save()
+                    updated_instances_data.append(serializer.data)
+                else:
+                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response(updated_instances_data, status=status.HTTP_200_OK)
 
 class UniteMesureViewSet(viewsets.ModelViewSet):
     queryset = UniteMesure.objects.all()
@@ -428,14 +528,26 @@ class CategorieMatiereViewSet(viewsets.ModelViewSet):
     queryset = CategorieMatiere.objects.all()
     serializer_class = CategorieMatiereSerializer
 
-class BalancesViewSet(viewsets.ModelViewSet):
-    queryset = Balances.objects.all()
-    serializer_class = BalancesSerializer
-"""
-class InstructionsBalancesViewSet(viewsets.ModelViewSet):
+class TypeAppareilViewSet(viewsets.ModelViewSet):
+    queryset = TypeAppareil.objects.all()
+    serializer_class = TypeAppareilSerializer
+
+class TypeCommunicationViewSet(viewsets.ModelViewSet):
+    queryset = TypeCommunication.objects.all()
+    serializer_class = TypeCommunicationSerializer
+class AppareilsViewSet(viewsets.ModelViewSet):
+    queryset = Appareils.objects.all()
+    serializer_class = AppareilsSerializer
+
+
+class ReponseInstructionsViewSet(viewsets.ModelViewSet):
+    queryset = ReponseInstructions.objects.all()
+    serializer_class = ReponseInstructionsSerializer
+
+class InstructionsAppareilsViewSet(viewsets.ModelViewSet):
    
-    queryset = InstructionsBalances.objects.all()
-    serializer_class = InstructionsBalancesSerializer
+    queryset = InstructionsAppareils.objects.all()
+    serializer_class = InstructionsAppareilsSerializer
 
     def recuperer_liste_commandes(self, request):
        
@@ -472,16 +584,15 @@ class InstructionsBalancesViewSet(viewsets.ModelViewSet):
 
     def envoyer_instruction(self, request, pk=None):
         
-        instruction = get_object_or_404(InstructionsBalances, pk=pk)
+        instruction = get_object_or_404(InstructionsAppareils, pk=pk)
         reponse = self.envoyer_et_recevoir(instruction.nom_instruction)
         return Response({'reponse': reponse})
 
     def list(self, request):
         
-        queryset = InstructionsBalances.objects.all()
-        serializer = InstructionsBalancesSerializer(queryset, many=True)
+        queryset = InstructionsAppareils.objects.all()
+        serializer = InstructionsAppareilsSerializer(queryset, many=True)
         return Response(serializer.data)
-"""
 
 class FormeViewSet(viewsets.ModelViewSet):
     queryset = Forme.objects.all()
@@ -490,9 +601,27 @@ class FormeViewSet(viewsets.ModelViewSet):
             return FormeReadSerializer
         return FormeWriteSerializer
 
+class EtapesViewSet(viewsets.ModelViewSet):
+    queryset = Etapes.objects.all()
+    serializer_class = EtapesSerializer
+
+class TypeControleViewSet(viewsets.ModelViewSet):
+    queryset = TypeControle.objects.all()
+
+    def get_serializer_class(self):
+        if self.action in ['list', 'retrieve']:
+            return TypeControleReadSerializer
+        return TypeControleWriteSerializer
+
+
+class ControlesViewSet(viewsets.ModelViewSet):
+    queryset = Controles.objects.all()
+    serializer_class = ControlesSerializer
+
 class EpiViewSet(viewsets.ModelViewSet):
     queryset = Epi.objects.all()
     serializer_class = EpiSerializer
+
 class EpiFormulesViewSet(viewsets.ModelViewSet):
     queryset = EpiFormules.objects.all()
     def get_serializer_class(self):

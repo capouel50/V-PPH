@@ -7,13 +7,10 @@
         </q-toolbar>
       <q-card-section class="q-pt-none">
         <q-form @submit="submitForm">
-          <CustomTextarea
-            :textareaModel="message"
-            @update:textareaModel="value => message = value"
+          <q-input
+            v-model="message"
             label="Message"
-            textareaRef="messageTextarea"
-            iconName="message"
-            modelName="message"
+            icon="message"
             required
           />
           <div class="row justify-center">
@@ -28,12 +25,7 @@
 
 <script>
 import { mapState, mapActions, mapGetters } from 'vuex';
-import CustomTextarea from "@/components/FormField/CustomTextarea.vue";
-
 export default {
-  components: {
-    CustomTextarea
-  },
 
   computed: {
     ...mapState('contact', ['contactData']),

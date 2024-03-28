@@ -30,6 +30,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
+OPENAI_API_KEY = config('OPENAI_API_KEY')
 
 APP_NAME = 'PPH'
 # Application definition

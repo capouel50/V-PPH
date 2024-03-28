@@ -7,7 +7,8 @@ from .views import (
     VoieViewSet, TypePrepViewSet, ParametresPrepViewSet, ParametresFormulesViewSet, CompositionFilterView,
     DemandesViewSet, FichesViewSet, FichesSemaine, FichesMois, ConditionnementViewSet, CategorieMatiereViewSet,
     CatalogueImportViewSet, ReceptionViewSet, EtablissementViewSet, ParametresDemandesViewSet, ParametresFichesViewSet,
-    EpiViewSet, EpiFormulesViewSet, BalancesViewSet, InstructionsBalancesViewSet, ArticlesFormulesViewSet
+    EpiViewSet, EpiFormulesViewSet, AppareilsViewSet, InstructionsAppareilsViewSet, ArticlesFormulesViewSet, TypeCommunicationViewSet,
+    TypeAppareilViewSet, ReponseInstructionsViewSet, EtapesViewSet, ControlesViewSet, TypeControleViewSet, ChatGPTView
 )
 from PPH import views
 from django.conf import settings
@@ -17,7 +18,7 @@ router = DefaultRouter()
 router.register(r'etablissement', EtablissementViewSet)
 router.register(r'formules', FormuleViewSet)
 router.register(r'suppliers', SupplierViewSet, basename='suppliers')
-router.register(r'balances-suppliers', SupplierViewSet, basename='balances-supplier')
+router.register(r'appareils-suppliers', SupplierViewSet, basename='appareils-supplier')
 router.register(r'types-matieres', TypeMatiereViewSet)
 router.register(r'unites-mesure', UniteMesureViewSet)
 router.register(r'formes', FormeViewSet)
@@ -42,11 +43,19 @@ router.register(r'parametres-demandes', ParametresDemandesViewSet)
 router.register(r'parametres-fiches', ParametresFichesViewSet)
 router.register(r'epi', EpiViewSet)
 router.register(r'epi-formules', EpiFormulesViewSet)
-router.register(r'balances', BalancesViewSet)
-router.register(r'instructions-balances', InstructionsBalancesViewSet)
+router.register(r'appareils', AppareilsViewSet)
+router.register(r'type-com', TypeCommunicationViewSet)
+router.register(r'types-appareils', TypeAppareilViewSet)
+router.register(r'instructions-appareils', InstructionsAppareilsViewSet)
+router.register(r'reponses-appareils', ReponseInstructionsViewSet)
 router.register(r'articles-formules', ArticlesFormulesViewSet)
+router.register(r'etapes', EtapesViewSet)
+router.register(r'controles', ControlesViewSet)
+router.register(r'type-controle', TypeControleViewSet)
+router.register(r'articles-formules/update/<int:num_formule>/', ArticlesFormulesViewSet)
 
 urlpatterns = [
+    path('chatgpt/', ChatGPTView.as_view(), name='chatgpt'),
     path('reset-data/', views.reset_data, name='reset_data'),
     path('fiches-mois/', FichesMois.as_view(), name='fiches-mois'),
     path('fiches-semaine/', FichesSemaine.as_view(), name='fiches-semaine'),

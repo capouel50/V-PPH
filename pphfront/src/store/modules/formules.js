@@ -20,7 +20,7 @@ const getters = {
   settings: (state) => state.settings,
   expanded: (state) => state.expanded,
   showMenu: (state) => state.showMenu,
-  allTypes: (state) => state.types,
+  allTypesPrep: (state) => state.types,
   allCompositions: (state) => state.compositions,
   allParametres: (state) => state.parametres,
   allParametresFormules: (state) => state.parametresFormules,
@@ -31,16 +31,14 @@ const getters = {
 
 const actions = {
 
-  async updateArticles({dispatch}, stateData) {
+  async updateArticles({commit, dispatch}, {formData, formuleId}) {
     try {
-      console.log("reception de stateData:", stateData);
-        // Assurez-vous que 'formData' est directement le tableau d'objets
-        await api.patch('PPH/articles-formules/', stateData, {
+        const response = await api.put(`PPH/articles-formules/update/${formuleId}/`, formData, {
           headers: {
           'Content-Type': 'application/json'
           }
         })
-        dispatch('loadArticlesFormules');
+        commit('SET_ARTICLES_FORMULES', response.data);
         dispatch('notifications/showNotification', {
             message: 'Articles modifiés avec succès',
             type: 'success'
@@ -79,9 +77,9 @@ const actions = {
     }
   },
 
-  async updateFormule({dispatch}, formData) {
+  async updateFormule({dispatch}, {formData, formuleId}) {
     try {
-      await api.patch('PPH/nouvelle-formule/', formData);
+      await api.patch(`PPH/nouvelle-formule/${formuleId}`, formData);
       dispatch('notifications/showNotification', {
         message: 'Formule modifiée avec succès',
         type: 'success'
@@ -96,16 +94,15 @@ const actions = {
     }
   },
 
-  async addArticles({dispatch}, stateData) {
+  async addArticles({dispatch}, formData) {
     try {
-      console.log("reception de stateData:", stateData);
+      console.log("reception de stateData:", formData);
         // Assurez-vous que 'formData' est directement le tableau d'objets
-        await api.post('PPH/articles-formules/', stateData, {
+        await api.post('PPH/articles-formules/', formData, {
           headers: {
           'Content-Type': 'application/json'
           }
         })
-        dispatch('loadArticlesFormules')
         dispatch('notifications/showNotification', {
             message: 'Articles ajoutés avec succès',
             type: 'success'

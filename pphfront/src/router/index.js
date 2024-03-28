@@ -16,7 +16,9 @@ import MatieresCatalogueCards from "@/components/MatieresPremiere/MatieresCatalo
 import CreateFormula from "@/components/Formules/CreateFormula.vue";
 import CreateFiche from "@/components/Fiches/CreateFiche.vue";
 import InfosFiche from "@/components/Fiches/InfosFiche.vue";
-import ControlesCards from "@/components/Fiches/ControlesCards.vue";
+import ControlesCards from "@/components/Controles/ControlesCards.vue";
+import ControleFiche from "@/components/Controles/ControleFiche.vue";
+import CreateControle from "@/components/Controles/CreateControle.vue";
 import FichesArchivesCards from "@/components/Fiches/FichesArchivesCards.vue";
 import CreateDemande from "@/components/Demandes/CreateDemande.vue";
 import DemandesCards from "@/components/Demandes/DemandesCards.vue";
@@ -24,8 +26,9 @@ import FormulaCards from "@/components/Formules/FormulaCards.vue";
 import CreateMatiere from "@/components/MatieresPremiere/CreateMatiere.vue";
 import MatieresCardsReception from "@/components/MatieresPremiere/MatieresCardsReception.vue";
 import MatieresCardsCommande from "@/components/MatieresPremiere/MatieresCardsCommande.vue";
-import BalancesCards from "@/components/Balances/BalancesCards.vue";
-import CreateBalance from "@/components/Balances/CreateBalance.vue";
+import AppareilsCards from "@/components/Appareils/AppareilsCards.vue";
+import CreateAppareil from "@/components/Appareils/CreateAppareil.vue";
+import ChatGptAPI from "@/components/UserHelper/ChatGptAPI.vue";
 
 const routes = [
   {
@@ -217,6 +220,24 @@ const routes = [
     component: ControlesCards
   },
   {
+    path: '/controles/:id',
+    name: 'updateControles',
+    component: CreateControle,
+    props: true
+  },
+  {
+    path: '/controles',
+    name: 'CreateControles',
+    component: CreateControle,
+    props: true
+  },
+  {
+    path: '/controle-fiche',
+    name: 'ControleFiche',
+    component: ControleFiche,
+    props: true
+  },
+  {
     path: '/archives',
     name: 'FichesArchivesCards',
     component: FichesArchivesCards
@@ -237,25 +258,31 @@ const routes = [
     component: MatieresCardsCommande
   },
   {
-    path: '/balances',
-    name: 'BalancesCards',
-    component: BalancesCards
+    path: '/appareils',
+    name: 'AppareilsCards',
+    component: AppareilsCards
   },
   {
-    path: '/suppliers/balances',
-    name: 'CreateBalancesSupplier',
+    path: '/suppliers/appareils',
+    name: 'CreateAppareilsSupplier',
     component: CreateSupplier
   },
   {
-    path: '/creer-balances',
-    name: 'CreateBalances',
-    component: CreateBalance,
+    path: '/creer-appareils',
+    name: 'CreateAppareils',
+    component: CreateAppareil,
     props: true,
   },
   {
-    path: '/modifier-balances/:id',
-    name: 'updateBalances',
-    component: CreateBalance,
+    path: '/modifier-appareils/:id',
+    name: 'updateAppareil',
+    component: CreateAppareil,
+    props: true,
+  },
+  {
+    path: '/gpt4-api',
+    name: 'chatGpt',
+    component: ChatGptAPI,
     props: true,
   },
 ]

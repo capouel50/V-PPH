@@ -2,6 +2,9 @@
   <q-fab glossy class="btn-cyan-pph" icon="help" direction="left">
     <q-fab-action flat external-label label-position="top" label="Contact" color="cyan-4" @click="toggleForm" icon="contact_support" />
     <q-fab-action flat external-label label-position="top" label="Tutoriel" color="cyan-4" @click="onClick" icon="play_lesson" />
+    <router-link to="/gpt4-api/">
+      <q-fab-action flat external-label label-position="top" label="V-PPH" color="purple-4" icon="3p"/>
+    </router-link>
   </q-fab>
 </template>
 

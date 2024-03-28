@@ -1,9 +1,10 @@
 from django.contrib import admin
-from .models import CustomUser, UserFunction, Supplier, TypeMatiere, \
+from .models import (CustomUser, UserFunction, Supplier, TypeMatiere, \
     UniteMesure, Forme, MatierePremiere, Liste, TypePrep, Formule, Composition, \
     Catalogue, Voie, ParametresPrep, ParametresFormules, Demandes, Fiches, Service, \
     Conditionnement, CategorieMatiere, CatalogueImport, Reception, Etablissement, \
-    ParametresDemandes, ParametresFiches, Balances, FabricantsBalances, InstructionsBalances, Epi, EpiFormules, ArticlesFormules
+    ParametresDemandes, ParametresFiches, Appareils, FabricantsAppareils, InstructionsAppareils, ReponseInstructions, \
+    TypeAppareil, TypeCommunication, Epi, EpiFormules, ArticlesFormules, Etapes, Controles, TypeControle)
 
 class CustomUserAdmin(admin.ModelAdmin):
     list_display = ('username', 'email', 'first_name', 'last_name', 'function', 'is_active', 'is_staff')
@@ -17,6 +18,9 @@ class UserFunctionAdmin(admin.ModelAdmin):
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(UserFunction, UserFunctionAdmin)
 admin.site.register(Supplier)
+admin.site.register(Etapes)
+admin.site.register(Controles)
+admin.site.register(TypeControle)
 
 @admin.register(Etablissement)
 class EtablissementAdmin(admin.ModelAdmin):
@@ -42,16 +46,25 @@ class EpiAdmin(admin.ModelAdmin):
 class EpiFormulesAdmin(admin.ModelAdmin):
     list_display = ['num_formule', 'epi', 'resettable']
 
-@admin.register(Balances)
-class BalancesAdmin(admin.ModelAdmin):
+@admin.register(TypeCommunication)
+class TypeCommunicationAdmin(admin.ModelAdmin):
+    list_display = ['nom']
+@admin.register(TypeAppareil)
+class TypeAppareilAdmin(admin.ModelAdmin):
+    list_display = ['nom']
+@admin.register(Appareils)
+class AppareilsAdmin(admin.ModelAdmin):
     list_display = ['nom', 'modele', 'fabricant']
 
-@admin.register(InstructionsBalances)
-class InstructionsBalancesAdmin(admin.ModelAdmin):
-    list_display = ['nom', 'modele_balance', 'instruction', 'description']
+@admin.register(ReponseInstructions)
+class ReponseInstructionsAdmin(admin.ModelAdmin):
+    list_display = ['nom', 'format', 'message']
+@admin.register(InstructionsAppareils)
+class InstructionsAppareilsAdmin(admin.ModelAdmin):
+    list_display = ['nom', 'modele_appareil', 'instruction', 'description']
 
-@admin.register(FabricantsBalances)
-class FabricantsBalancesAdmin(admin.ModelAdmin):
+@admin.register(FabricantsAppareils)
+class FabricantsAppareilsAdmin(admin.ModelAdmin):
     list_display = ['name', 'address', 'postal', 'city', 'country', 'email', 'phone', 'site', 'is_activate', 'user_code', 'password']
 @admin.register(Liste)
 class ListeAdmin(admin.ModelAdmin):

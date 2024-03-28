@@ -5,6 +5,7 @@ from datetime import date
 from .utils import convert_quantity
 from django.db import transaction
 from datetime import timedelta
+from django.db.models import JSONField
 class Etablissement(models.Model):
 
     nom_long = models.CharField(max_length=100, unique=True)
@@ -82,7 +83,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.username
 
-class FabricantsBalances(models.Model):
+class FabricantsAppareils(models.Model):
 
     name = models.CharField(max_length=100, unique=True)
     address = models.CharField(max_length=100, blank=True)
@@ -103,11 +104,21 @@ class FabricantsBalances(models.Model):
     def __str__(self):
         return self.name
 
+class TypeAppareil(models.Model):
+    nom = models.CharField(max_length=200)
+    def __str__(self):
+        return self.nom
 
-class Balances(models.Model):
+class TypeCommunication(models.Model):
+    nom = models.CharField(max_length=200)
+    def __str__(self):
+        return self.nom
+class Appareils(models.Model):
+    type = models.ForeignKey(TypeAppareil, on_delete=models.CASCADE)
+    com = models.ForeignKey(TypeCommunication, on_delete=models.CASCADE, null=True)
     nom = models.CharField(max_length=100, unique=True, null=True)
     modele = models.CharField(max_length=100, unique=True)
-    fabricant = models.ForeignKey(FabricantsBalances, on_delete=models.CASCADE)
+    fabricant = models.ForeignKey(FabricantsAppareils, on_delete=models.CASCADE)
     calibration = models.DateField(default=date.today, blank=True)
     duree_calibration = models.IntegerField(null=True)
     prochaine = models.DateField(blank=True, null=True)
@@ -127,12 +138,13 @@ class Balances(models.Model):
     def __str__(self):
         return self.modele
 
-class InstructionsBalances(models.Model):
+class InstructionsAppareils(models.Model):
     action = models.CharField(max_length=100,null=True, blank=True)
-    modele_balance = models.ForeignKey(Balances, on_delete=models.CASCADE)
+    modele_appareil = models.ForeignKey(Appareils, on_delete=models.CASCADE, null=True)
     nom = models.CharField(max_length=100, unique=True)
     instruction = models.CharField(max_length=100, unique=True)
     description = models.CharField(max_length=100,null=True, blank=True)
+    button = models.BooleanField(default=False)
     format_reponse = models.CharField(max_length=100, null=True)
     class Meta:
         ordering = ['nom']
@@ -140,6 +152,15 @@ class InstructionsBalances(models.Model):
     def __str__(self):
         return self.nom
 
+class ReponseInstructions(models.Model):
+    num_instruction = models.ForeignKey(InstructionsAppareils, on_delete=models.CASCADE, null=True)
+    nom = models.CharField(max_length=200)
+    format = models.CharField(max_length=200)
+    message = models.CharField(max_length=200)
+    erreur = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.nom
 
 class Supplier(models.Model):
 
@@ -236,7 +257,7 @@ class ParametresPrep(models.Model):
     unite = models.CharField(max_length=200, null=True)
 
     def __str__(self):
-        return self.nom
+        return f"{self.nom} - {self.unite}"
 
 class ParametresDemandes(models.Model):
     num_demande = models.IntegerField()
@@ -270,6 +291,7 @@ class Epi(models.Model):
     nom = models.CharField(max_length=200, null=True)
     def __str__(self):
         return f"{self.nom}"
+
 class EpiFormules(models.Model):
     num_formule = models.IntegerField()
     epi = models.ForeignKey(Epi, on_delete=models.CASCADE)
@@ -346,6 +368,31 @@ class ArticlesFormules(models.Model):
     num_formule = models.IntegerField()
     article = models.ForeignKey(MatierePremiere, on_delete=models.CASCADE)
     resettable = models.BooleanField(default=True)
+    def __str__(self):
+        return self.article.nom
+
+class Etapes(models.Model):
+    num = models.CharField(max_length=200, null=True)
+    nom = models.CharField(max_length=200, null=False)
+    description = models.TextField(max_length=500, null=False)
+    resettable = models.BooleanField(default=True)
+
+class TypeControle(models.Model):
+    nom = models.CharField(max_length=100)
+    type_appareil = models.ForeignKey(TypeAppareil, on_delete=models.CASCADE, null=True, blank=True)
+    structure_formulaire = JSONField()
+    def __str__(self):
+        return self.nom
+
+class Controles(models.Model):
+    num_fiche = models.IntegerField(null=True)
+    appareil = models.ForeignKey(Appareils, related_name='controles', on_delete=models.CASCADE, null=True)
+    date_heure = models.DateTimeField(auto_now_add=True, null=True)
+    controleur = models.ForeignKey(CustomUser, on_delete=models.CASCADE, null=True)
+    details = JSONField(null=True)
+    remarques = models.TextField(blank=True, null=True)
+    def __str__(self):
+        return f"{self.type_controle.nom} sur {self.appareil.nom}"
 
 class Formule(models.Model):
     nom = models.CharField(max_length=200, null=False)
@@ -369,8 +416,8 @@ class Formule(models.Model):
     controleur = models.ForeignKey(CustomUser, on_delete=models.CASCADE, null=True, related_name='formules_controleur')
     cloud = models.BooleanField(default=False)
     pediatric = models.BooleanField(default=False)
-    specialite = models.BooleanField(default=False)
     hospitaliere = models.BooleanField(default=False)
+    controles = JSONField(null=True, blank=True)
     resettable = models.BooleanField(default=True)
 
     class Meta:
@@ -384,6 +431,7 @@ class Composition(models.Model):
     matiere = models.ForeignKey(MatierePremiere, on_delete=models.CASCADE, null=True)
     qté = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     calcul = models.CharField(max_length=200, null=True)
+    type_appareil = models.ForeignKey(TypeAppareil, on_delete=models.CASCADE, null=True)
     resettable = models.BooleanField(default=True)
 
     def __str__(self):
@@ -535,3 +583,4 @@ class Reception(models.Model):
                     matiere.qté_stock -= self.qte_echantillon
                 matiere.attente_livraison = False
                 matiere.save()
+

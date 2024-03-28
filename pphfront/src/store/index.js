@@ -10,6 +10,7 @@ import screen from './modules/screen';
 import forms from './modules/forms';
 import matieresPremieres from './modules/matieresPremieres';
 import formules from './modules/formules';
+import etapes from './modules/etapes';
 import voiesAdministration from './modules/voiesAdministration';
 import demandes from './modules/demandes';
 import fiches from './modules/fiches';
@@ -18,13 +19,18 @@ import websocket from './modules/websocket';
 import dateFormatter from './modules/dateFormatter';
 import services from './modules/services';
 import epi from './modules/epi';
-import balances from './modules/balances';
+import appareils from './modules/appareils';
 import resetData from './modules/resetData';
 import apiError from './modules/apiError';
+import controles from './modules/controles';
+import chatGPT from './modules/chatGPT';
 
 const store = createStore({
   modules: {
-    balances,
+    chatGPT,
+    controles,
+    etapes,
+    appareils,
     epi,
     apiError,
     resetData,

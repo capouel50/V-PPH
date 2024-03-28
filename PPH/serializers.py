@@ -7,7 +7,8 @@ from .models import CustomUser, Supplier, UserFunction, Contact, \
     Composition, Catalogue, Voie, Liste, ParametresPrep, ParametresFormules, \
     Demandes, Fiches, Service, Conditionnement, CategorieMatiere, CatalogueImport, \
     Reception, Etablissement, ParametresDemandes, ParametresFiches, Epi, EpiFormules, \
-    Balances, FabricantsBalances, InstructionsBalances, ArticlesFormules
+    Appareils, FabricantsAppareils, InstructionsAppareils, TypeAppareil, TypeCommunication, \
+    ArticlesFormules, ReponseInstructions, Controles, Etapes, TypeControle
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -100,9 +101,9 @@ class EtablissementSerializer(serializers.ModelSerializer):
         else:
             return None
 
-class FabricantsBalancesSerializer(serializers.ModelSerializer):
+class FabricantsAppareilsSerializer(serializers.ModelSerializer):
     class Meta:
-        model = FabricantsBalances
+        model = FabricantsAppareils
         fields = '__all__'
 
 class SupplierSerializer(serializers.ModelSerializer):
@@ -270,39 +271,68 @@ class MatierePremiereWriteSerializer(serializers.ModelSerializer):
         model = MatierePremiere
         fields = '__all__'
 
-class ArticlesFormulesWriteSerializer(serializers.ModelSerializer):
+class EtapesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Etapes
+        fields = '__all__'
+
+
+class ArticleIdUpdateSerializer(serializers.Serializer):
     article = serializers.PrimaryKeyRelatedField(queryset=MatierePremiere.objects.all())
 
-    class Meta:
-        model = ArticlesFormules
-        fields = '__all__'
+    def update(self, instance, validated_data):
+        instance.article = validated_data.get('article', instance.article)
+        instance.save()
+        return instance
+
 class ArticlesFormulesListSerializer(serializers.ListSerializer):
-    child = ArticlesFormulesWriteSerializer()
+    def update(self, instances, validated_data):
+        # Créer un mappage des instances par ID pour un accès facile
+        instance_mapping = {instance.id: instance for instance in instances}
 
-    def create(self, validated_data):
-        articles_formules = [ArticlesFormules(**item) for item in validated_data]
-        return ArticlesFormules.objects.bulk_create(articles_formules)
+        # Liste pour collecter les instances mises à jour
+        updated_instances = []
+
+        for item in validated_data:
+            instance = instance_mapping.get(item['id'])
+            if instance:
+                # Utiliser ArticleIdUpdateSerializer pour mettre à jour l'instance
+                article_update_serializer = ArticleIdUpdateSerializer(instance, data=item)
+                if article_update_serializer.is_valid():
+                    updated_instance = article_update_serializer.save()
+                    updated_instances.append(updated_instance)
+                else:
+                    # Gérer les erreurs de validation si nécessaire
+                    pass
+
+        return updated_instances
+
+class ArticlesFormulesWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        list_serializer_class = ArticlesFormulesListSerializer
+        model = ArticlesFormules
+        fields = ('id', 'article', 'num_formule')
+
 class ArticlesFormulesReadSerializer(serializers.ModelSerializer):
-    article = MatierePremiereReadSerializer()
+    article = MatierePremiereReadSerializer
     class Meta:
         model = ArticlesFormules
         fields = '__all__'
-class FormuleSerializer(serializers.ModelSerializer):
-    type = TypePrepSerializer(read_only=True)
-    liste = ListeSerializer(read_only=True)
-    voie = VoieSerializer(read_only=True)
-    class Meta:
-        model = Formule
-        fields = '__all__'
 
+class TypeAppareilSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TypeAppareil
+        fields = '__all__'
 class CompositionWriteSerializer(serializers.ModelSerializer):
     matiere = MatierePremiereWriteSerializer
+    type_appareil = TypeAppareilSerializer
     class Meta:
         model = Composition
         fields = '__all__'
 
 class CompositionReadSerializer(serializers.ModelSerializer):
     matiere = MatierePremiereReadSerializer()
+    type_appareil = TypeAppareilSerializer()
     class Meta:
         model = Composition
         fields = '__all__'
@@ -324,6 +354,105 @@ class CatalogueSerializer(serializers.ModelSerializer):
     fournisseur = SupplierSerializer()
     class Meta:
         model = Catalogue
+        fields = '__all__'
+
+class TypeCommunicationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TypeCommunication
+        fields = '__all__'
+
+class AppareilsSerializer(serializers.ModelSerializer):
+    fabricant = FabricantsAppareilsSerializer()
+    type = TypeAppareilSerializer()
+    com = TypeCommunicationSerializer()
+    class Meta:
+        model = Appareils
+        fields = '__all__'
+
+class ReponseInstructionsSerializer(serializers.ModelSerializer):
+    appareil = InstructionsAppareils()
+    class Meta:
+        model = ReponseInstructions
+        fields = '__all__'
+class InstructionsAppareilsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InstructionsAppareils
+        fields = '__all__'
+
+class EpiSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Epi
+        fields = '__all__'
+class EpiFormulesReadSerializer(serializers.ModelSerializer):
+    epi = EpiSerializer()
+    class Meta:
+        model = EpiFormules
+        fields = '__all__'
+
+class EpiSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Epi
+        fields = '__all__'
+
+
+class EpiFormulesWriteSerializer(serializers.ModelSerializer):
+    epi = EpiSerializer
+
+    class Meta:
+        model = EpiFormules
+        fields = '__all__'
+
+        def update(self, instance, validated_data):
+            epi_data = validated_data.pop('epi', None)
+
+            if epi_data is not None:
+                instance.epi = Epi.objects.get(id=epi_data)
+
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+
+            instance.save()
+            return instance
+
+class ReceptionWriteSerializer(serializers.ModelSerializer):
+    matiere = MatierePremiereReadSerializer
+    class Meta:
+        model = Reception
+        fields = '__all__'
+
+class ReceptionReadSerializer(serializers.ModelSerializer):
+    matiere = MatierePremiereReadSerializer()
+    class Meta:
+        model = Reception
+        fields = '__all__'
+
+class TypeControleReadSerializer(serializers.ModelSerializer):
+    type_appareil = TypeAppareilSerializer()
+
+    class Meta:
+        model = TypeControle
+        fields = '__all__'
+
+class TypeControleWriteSerializer(serializers.ModelSerializer):
+    type_appareil = TypeAppareilSerializer
+
+    class Meta:
+        model = TypeControle
+        fields = '__all__'
+
+class ControlesSerializer(serializers.ModelSerializer):
+    appareil = AppareilsSerializer()
+    controleur = CustomUserSerializer()
+    class Meta:
+        model = Controles
+        fields = '__all__'
+
+class FormuleSerializer(serializers.ModelSerializer):
+    type = TypePrepSerializer(read_only=True)
+    liste = ListeSerializer(read_only=True)
+    voie = VoieSerializer(read_only=True)
+    class Meta:
+        model = Formule
         fields = '__all__'
 
 class DemandesReadSerializer(serializers.ModelSerializer):
@@ -353,42 +482,4 @@ class FichesWriteSerializer(serializers.ModelSerializer):
     service = ServiceSerializer
     class Meta:
         model = Fiches
-        fields = '__all__'
-
-class BalancesSerializer(serializers.ModelSerializer):
-    fabricant = FabricantsBalancesSerializer()
-    class Meta:
-        model = Balances
-        fields = '__all__'
-
-class InstructionsBalancesSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = InstructionsBalances
-        fields = '__all__'
-
-class EpiSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Epi
-        fields = '__all__'
-class EpiFormulesReadSerializer(serializers.ModelSerializer):
-    epi = EpiSerializer()
-    class Meta:
-        model = EpiFormules
-        fields = '__all__'
-
-class EpiFormulesWriteSerializer(serializers.ModelSerializer):
-    epi = EpiSerializer
-    class Meta:
-        model = EpiFormules
-        fields = '__all__'
-class ReceptionWriteSerializer(serializers.ModelSerializer):
-    matiere = MatierePremiereReadSerializer
-    class Meta:
-        model = Reception
-        fields = '__all__'
-
-class ReceptionReadSerializer(serializers.ModelSerializer):
-    matiere = MatierePremiereReadSerializer()
-    class Meta:
-        model = Reception
         fields = '__all__'

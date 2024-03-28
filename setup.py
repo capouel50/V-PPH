@@ -89,7 +89,6 @@ setup(
         "sqlparse==0.4.4"
         "tabula-py==2.9.0"
         "Twisted==23.10.0"
-        "twisted-iocpsupport==1.0.4"
         "txaio==23.1.1"
         "typing_extensions==4.9.0"
         "tzdata==2023.3"

@@ -1,63 +1,68 @@
 <template>
-  <q-form @submit.prevent="submitForm">
-    <div
-      v-for="(row, index) in formRows"
-      :key="index"
-      class="row"
-    >
-      <q-select
-        label="Matière première"
-        v-model="row.matiere"
-        color="cyan-4"
-        class="col-4 hover-effect q-mr-md"
-        :options="allMatieresLabel"
-        option-label="label"
-        option-value="id"
-      >
-        <template v-slot:option="scope">
-          <q-item
-            v-bind="scope.itemProps"
-            v-on="scope.itemEvents"
-          >
-            <q-item-section>{{ scope.opt.label }}</q-item-section>
-            <q-item-section side>
-              <q-img v-if="scope.opt.cmr" class="q-ml-xs fade-blink" src="@/assets/img/health_hazard.png" :style="{ width: '20px', height: '20px' }"/>
+  <div class="row">
+        <q-list bordered class="col-11" v-if="rows.length > 0">
+          <q-item v-for="(row, index) in rows" :key="index" class="row">
+            <q-item-section>
+              <q-select
+                :label="row.matiere ? 'Matiere premiere n°' + (index + 1) : 'Ajouter une matière première'"
+                v-model="row.matiere"
+                color="cyan-4"
+                class="hover-effect"
+                :options="matieres"
+                option-label="label"
+                option-value="id"
+              >
+              <template v-slot:option="scope">
+                <q-item
+                  v-bind="scope.itemProps"
+                  v-on="scope.itemEvents"
+                >
+                  <q-item-section>{{ scope.opt.label }}</q-item-section>
+                  <q-item-section side>
+                    <q-img v-if="scope.opt.cmr" class="q-ml-xs fade-blink" src="@/assets/img/health_hazard.png" :style="{ width: '20px', height: '20px' }"/>
+                  </q-item-section>
+                </q-item>
+              </template>
+            </q-select>
             </q-item-section>
-          </q-item>
-        </template>
-      </q-select>
-      <q-input
-        v-model="row.qté"
-        color="cyan-4"
-        class="col-1 hover-effect text-center q-mr-md"
-        label="Quantité"
-      >
-        <template v-slot:append>
-          <div class="text-cyan-4 text-subtitle2">{{ row.matiere.unite }}</div>
-        </template>
-      </q-input>
-      <q-input
-          readonly
-          label="Calcul appliqué"
-          v-model="row.calculInput"
-          color="cyan-4"
-          class="col-5 hover-effect text-center"
-      >
-        <template v-slot:prepend>
-          <q-avatar>
-            <q-btn flat size="md" @click="openCalculDialog(index)" icon="calculate" color="cyan-4" class="hover-effect"/>
-          </q-avatar>
-        </template>
-      </q-input>
-      <q-btn-group flat class="q-ml-lg">
-        <q-btn flat size="sm" @click="addRow" icon="add_box" color="green-4" class="hover-effect-success"/>
-        <q-btn flat size="sm" @click="removeRow" icon="delete_forever" color="red-4" class="hover-effect-warning"/>
-      </q-btn-group>
-      <q-dialog v-model="calculDialog">
+            <q-item-section class="col-1">
+              <q-input
+                v-model="row.qté"
+                color="cyan-4"
+                class="hover-effect text-center"
+                label="Quantité"
+              >
+                <template v-slot:append>
+                  <div class="text-cyan-4 text-subtitle2 q-pt-md" v-if=" typeof row.matiere ==='string'">{{ row.unite_mesure }}</div>
+                  <div class="text-cyan-4 text-subtitle2 q-pt-md" v-else>{{ row.matiere.unite }}</div>
+                </template>
+              </q-input>
+            </q-item-section>
+            <q-item-section class="col-4">
+              <q-input
+                  readonly
+                  v-model="row.calcul"
+                  :label="row.calcul ? 'Calcul appliqué' : 'Ajouter un calcul'"
+                  color="cyan-4"
+                  class="hover-effect text-center"
+              >
+                <template v-slot:prepend>
+                  <q-avatar>
+                    <q-btn flat size="md" @click="openCalculDialog(index)" icon="calculate" color="purple-4" class="hover-effect"
+                    >
+                      <q-tooltip>Ajouter ou modifier le calcul</q-tooltip>
+                    </q-btn>
+                  </q-avatar>
+                </template>
+              </q-input>
+              <q-dialog v-model="calculDialog">
       <q-card>
         <q-card-section>
-          <div class="row text-subtitle1 text-cyan-4 justify-center">
-            Calcul pour {{ formRows[selectedRowIndex].matiere.nom }}
+          <div v-if="typeof currentRow.matiere === 'string'" class="row text-subtitle1 text-cyan-4 justify-center">
+            Calcul pour {{ currentRow.matiere }}
+          </div>
+          <div  v-else class="row text-subtitle1 text-cyan-4 justify-center">
+            Calcul pour {{ currentRow.matiere.nom }} {{currentRow.matiere.qté_cdt}}{{currentRow.matiere.unite_cdt}} - {{currentRow.matiere.forme.nom}} - {{currentRow.matiere.fournisseur.name}}
           </div>
         </q-card-section>
         <q-separator/>
@@ -65,33 +70,76 @@
           <div class="row text-orange-4 text-subtitle2 justify-center">Paramètres de calcul</div>
           <q-card-actions>
             <div class="row justify-center">
-            <div v-for="(parametre, index) in filteredParametresFormules" :key="index">
+            <div v-for="(parametre, index) in parametresRows" :key="index">
               <q-btn
                 flat
                 color="cyan-4"
                 class="hover-effect"
-                :label="parametre.label"
-                @Click="inputParametre(parametre)"
+                :label="`${parametre.parametre.nom} - ${parametre.parametre.unite}`"
+                @Click="inputParametre(`${parametre.parametre.nom} - ${parametre.parametre.unite}`, indexRow)"
               />
             </div>
-              <q-btn
+              <q-btn v-if="!formuleId"
                 flat
                 color="cyan-4"
                 class="hover-effect"
-                :label="'Quantité - ' + (formRows[selectedRowIndex]?.matiere?.unite_mesure?.nom || 'Unité inconnue')"
-                @click="inputParametre('Quantité - ' + (formRows[selectedRowIndex]?.matiere?.unite_mesure?.nom || ''))"
-              >
-              </q-btn>
+                :label="'Quantité - ' + (currentRow?.matiere?.unite_mesure?.nom || 'Unité inconnue')"
+                @click="inputParametre('Quantité - ' + (currentRow?.matiere?.unite_mesure?.nom || ''), indexRow)"
+              />
+              <q-btn v-else
+                flat
+                color="cyan-4"
+                class="hover-effect"
+                :label="'Quantité - ' + (currentRow?.unite_mesure || 'Unité inconnue')"
+                @click="inputParametre('Quantité - ' + (currentRow?.unite_mesure || ''), indexRow)"
+              />
             </div>
           </q-card-actions>
         </q-card-section>
         <q-separator/>
         <q-card-section>
-          <q-input
-              v-model="row.calcul"
+          <div class="row">
+            <div class="col-12">
+              <q-input
+              v-model="currentRow.calcul"
               color="cyan-4"
-              label="Entrez le calcul a appliquer"
-          />
+              :label="response && currentRow.calcul ? 'Calcul généré par V-PPH' : 'Entrez le calcul a appliquer'"
+          >
+            <template v-slot:prepend>
+              <q-btn  v-if="!ask" flat class="q-ma-none hover-effect fade-blink" color="purple-4" label="V-PPH" size="sm" @click.stop="gptCalculate(indexRow)"/>
+              <div v-if="ask && !response" class="q-pr-sm q-pl-md">
+                <atom-spinner
+                class="bg-op-8"
+                :animation-duration="1000"
+                :size="25"
+                :color="'#ff1d5e'"
+              />
+              </div>
+            </template>
+          </q-input>
+            </div>
+          </div>
+          <div class="row justify-center">
+            <div class="col-8">
+              <q-input
+              v-if="response"
+              v-model="question"
+              label="Effectuer une demande"
+              @keyup.enter="gptCalculate(indexRow)"
+            >
+            <template v-slot:append>
+              <q-btn
+              flat
+              color="purple-4"
+              class="hover-effect-success"
+              size="md"
+              icon="send"
+              @click="gptCalculate(indexRow)"
+            />
+            </template>
+          </q-input>
+            </div>
+          </div>
         </q-card-section>
         <q-separator/>
         <q-card-section>
@@ -101,262 +149,217 @@
             flat
             color="green-4"
             label="Valider"
-            @click="validerCalcul"
+            @click="validerCalcul(indexRow)"
           />
           <q-btn
             flat
             class="hover-effect"
             color="cyan-4"
             label="Effacer"
-            @click="effacerCalcul"
+            @click="effacerCalcul(indexRow)"
           />
           <q-btn
             flat
             color="red-4"
             label="Annuler"
-            @click="calculDialog = false"
+            @click="annulerCalcul"
           />
           </q-btn-group>
           </div>
         </q-card-section>
       </q-card>
       </q-dialog>
-    </div>
-
-    <div class="row">
-      <div class="col-4">
-        <q-btn flat @click="submitForm" color="green-4" class="q-mt-xs btn-flat-success-pph">
-          Valider
-        </q-btn>
+            </q-item-section>
+            <q-item-section class="col-2">
+              <q-select
+                label="Appareil de mesure"
+                v-model="row.type_appareil"
+                color="cyan-4"
+                class="hover-effect"
+                :options="typesAppareils"
+                option-label="nom"
+                option-value="id"
+              />
+            </q-item-section>
+            <q-item-section side>
+              <q-btn flat size="md" @click="removeLine(index)" icon="delete_forever" color="red-4"/>
+            </q-item-section>
+          </q-item>
+        </q-list>
+          <q-btn flat size="md" @click="addLine" icon="add_box" color="cyan-4" class="hover-effect q-px-xs" :label="rows.length > 0 ? '' : 'Ajouter'"/>
+          <q-btn v-if="rows.length > 0" flat size="md" @click="validRows" icon="check_circle" color="green-4" class="q-px-xs"/>
       </div>
-    </div>
-  </q-form>
+
 </template>
 
 <script>
-import { mapActions, mapGetters } from 'vuex';
-import api from '../../../api';
-
+import { mapActions, mapGetters, mapState, mapMutations } from 'vuex';
+import {AtomSpinner} from 'epic-spinners'
 export default {
+  components: {
+    AtomSpinner
+  },
+  props: ['newId', 'formuleId', 'typesAppareils', 'compoRows', 'parametresRows', 'name', 'prep'],
   data() {
     return {
       calculDialog: false,
-      enregistrements: [],
       selectedRowIndex: null,
       calculDetails: [],
+      matieres: [],
+      rows: [],
+      currentRow: [],
+      indexRow: '',
       formRows: [
         {
           num_formule: null,
           matiere: null,
-          qté: '',
+          qté: null,
           calcul: '',
           calculInput: '',
+          type_appareil: null,
         }
       ],
+      question: '',
+      context: '',
+      ask: false,
     };
   },
   computed: {
     ...mapGetters('matieresPremieres', ['allMatieres', 'allUnites']),
     ...mapGetters('formules', ['allParametres', 'allParametresFormules']),
+    ...mapGetters('appareils', ['allTypes']),
+    ...mapState('chatGPT', ['response']),
 
-    filteredParametresFormules() {
-      if (this.selectedRowIndex !== null) {
-        const numFormule = this.formRows[this.selectedRowIndex].num_formule;
-        const allParametresDetails = this.allParametres; // Assurez-vous que ceci contient les détails complets des paramètres
-        console.log('allparametres', this.allParametres);
-        return this.allParametresFormules
-          .filter(pf => pf.num_formule.toString() === numFormule.toString())
-          .map(pf => {
-            const parametreDetail = allParametresDetails.find(p => p.id === pf.parametre.id);
-            return {
-              ...pf,
-              label: parametreDetail ? `${parametreDetail.nom} - ${parametreDetail.unite}` : 'Inconnu',
-              id: pf.parametre.id
-            };
-          });
-      }
-      return [];
-    },
-
-    allMatieresLabel() {
-      // Calculer le libellé complet avec le nom et le fournisseur
-      return this.allMatieres.map(matiere => ({
-        ...matiere,
-        label: `${matiere.nom} ${matiere.qté_cdt}${matiere.unite_cdt} - ${matiere.forme.nom} - ${matiere.fournisseur.name}`,
-        id: `${matiere.id}`,
-        unite: `${matiere.unite_mesure.nom}`,
-        cmr: matiere.cmr,
-      }));
-    },
   },
 
   async created() {
-      await this.loadMatieresPremieres();
-      await this.loadUnites();
-      await this.loadParametres();
-      await this.loadParametresFormules();
-      await this.createNewNumCompo();
+    this.newChat();
+    console.log('compoRows', this.compoRows);
+      this.matieres = this.allMatieres.map(matiere => ({
+        ...matiere,
+        label: `${matiere.nom} ${matiere.qté_cdt}${matiere.unite_cdt} - ${matiere.forme.nom} - ${matiere.fournisseur.name}`,
+        id: matiere.id,
+        unite: matiere.unite_mesure.nom,
+        cmr: matiere.cmr,
+      }));
+      if(this.formuleId) {
+        this.rows = this.compoRows.map(compo => ({
+          num_formule: this.formuleId,
+          matiere: `${compo.matiere.nom} ${compo.matiere.qté_cdt}${compo.matiere.unite_cdt} - ${compo.matiere.forme.nom} - ${compo.matiere.fournisseur.name}`,
+          qté: compo.qté,
+          calcul: compo.calcul,
+          calculInput: '',
+          type_appareil: compo.type_appareil.nom,
+          unite_mesure: compo.matiere.unite_mesure.nom,
+          matiereId: compo.matiere.id
+        }));
+      }
     },
 
   methods: {
     ...mapActions('matieresPremieres', ['loadMatieresPremieres', 'loadUnites']),
     ...mapActions('formules', ['addComposition']),
     ...mapActions('formules', ['loadParametres', 'loadParametresFormules']),
+    ...mapActions('notifications', ['showNotification']),
+    ...mapActions('chatGPT', ['askQuestion', 'newChat']),
+    ...mapMutations('chatGPT', ['deleteResponse']),
 
-    validerCalcul() {
-      if (this.selectedRowIndex !== null) {
-        this.formRows[this.selectedRowIndex].calculInput = this.formRows[this.selectedRowIndex].calcul;
-        let calculTransforme = this.formRows[this.selectedRowIndex].calcul;
-
-        // Remplacer chaque label par son ID correspondant, sauf pour les cas spéciaux
-        //this.calculDetails.forEach(detail => {
-          //if (detail.id !== null) {
-            //const regex = new RegExp(detail.label, 'g');
-            //calculTransforme = calculTransforme.replace(regex, detail.id);
-          //} else {
-            // Pour les cas spéciaux comme "Quantité - Unité", vous pouvez choisir de les laisser tels quels,
-            // les remplacer par une valeur spécifique, ou effectuer une autre transformation.
-            // Exemple : Remplacer par une chaîne spéciale ou laisser tel quel
-            //const specialValue = "Qte"; // Définir une valeur spéciale si nécessaire
-            //calculTransforme = calculTransforme.replace(new RegExp(detail.label, 'g'), specialValue);
-          //}
-        //});
-
-        // Mettre à jour le calcul dans formRows
-        this.formRows[this.selectedRowIndex].calcul = calculTransforme;
-
-
-        // Réinitialiser les détails du calcul et fermer le dialogue
-        this.calculDetails = [];
-        this.calculDialog = false;
+    async gptCalculate(indexRow) {
+      this.currentRow.calcul = 'Analyse de la demande en cours...';
+      const params = this.parametresRows.map(row => `${row.parametre.nom} - ${row.parametre.unite}`);
+      const verification = 'Avant de traiter cette demande, vérifie bien les données que tu possèdes ou que tu trouves sur internet. '
+      const matieresString = this.compoRows.map(compoRow => `${compoRow.matiere.nom} ${compoRow.matiere.forme.nom}`).join(', ');
+      const message =
+          'Pour une ' + this.prep + ' de ' + this.name + ' dont les composants sont ' + matieresString +
+          ' donne moi le calcul qui sera utilisé pour mesurer la quantité de ' + this.rows[indexRow].matiere +
+          ' sachant que les parametres de calcul disponibles sont '
+      let restriction = '. Ces paramètres sont fournis sous le format: paramètre - unité. ' +
+          'Ta réponse doit uniquement comporter le calcul litéral effectué à l\'aide des paramètres (et leur unité), en respectant le format des paramètres fournis.' +
+          'Tu as le droit d\'utiliser des nombres et de faire autant d\'opérations que tu veux. ' +
+          'Fait bien attention aux unités des paramètres pour générer ton calcul.' +
+          'Exemple: (parametre1 + parametre2)/parametre1. ' +
+          'La valeur de chaque paramètre sera fourni par l\'utilisateur plus tard, lors de la préparation, elle remplacera les paramètres pour calculer les quantités, c\'est pourquoi tu dois fournir uniquement le calcul littéral et ne mettre aucune égalité.' +
+          'Je tiens absolument a ce que ta réponse ne contienne que le calcul littéral, tu n\'as pas le droit de faire de phrases, c\'est très important, sauf si tu as un doute, que tu constate une incohérence, ta réponse sera: '
+      let error = 'Erreur: (explique ici en 10 mots maximum d\'où vient l\'erreur)'
+      this.context = verification + message + params + restriction + error;
+      if (this.question.trim()) {
+        this.question = this.question + restriction + error;
+        await this.askQuestion(this.question);
+        this.question='';
+      }else{
+        this.ask = true;
+        await this.askQuestion(this.context);
+        this.ask = false;
       }
+      this.currentRow.calcul = this.response;
     },
 
-
-    openCalculDialog(rowIndex) {
-      this.selectedRowIndex = rowIndex;
-      this.calculDialog = true;
-      if (this.formRows[this.selectedRowIndex].calculInput){
-        this.formRows[this.selectedRowIndex].calcul = this.formRows[this.selectedRowIndex].calculInput
-      }
+    updateControlesRows() {
+      this.$emit('compoRows', this.rows);
+      console.log('rows', this.rows);
+      console.log('comporows', this.compoRows);
     },
 
-    inputParametre(parametre) {
-      console.log("Paramètre reçu :", parametre);
-
-      if (this.selectedRowIndex !== null && this.formRows[this.selectedRowIndex]) {
-        let label, id;
-
-        if (typeof parametre === 'string') {
-          // Cas où parametre est une chaîne de caractères (par exemple, "Quantité - Unité")
-          label = parametre;
-          id = null;  // Il n'y a pas d'ID spécifique pour "Quantité - Unité"
-        } else {
-          // Cas où parametre est un objet (paramètres habituels)
-          label = parametre.label;
-          id = parametre.id;
-        }
-
-        // Ajouter le label au calcul
-        this.formRows[this.selectedRowIndex].calcul += label;
-
-        // Ajouter les détails du paramètre ou de la chaîne pour le remplacement ultérieur
-        this.calculDetails.push({
-          label: label,
-          id: id
-        });
-      }
+    validRows(){
+      this.updateControlesRows();
+      this.showNotification({message: 'Composition ajoutée', type: 'success'});
     },
 
-
-    effacerCalcul() {
-      this.formRows[this.selectedRowIndex].calcul = " ";
-    },
-
-    removeRow(row) {
-      // Supprime la ligne qui contient le bouton
-      const index = this.formRows.indexOf(row);
-      this.formRows.splice(index, 1);
-    },
-
-    async createNewNumCompo() {
-      try {
-        const response = await api.get('/PPH/nouvelle-formule/dernier_id');
-        const dernierId = response.data.dernierId;
-        const newNumFormule = dernierId + 1;
-        console.error('dernier id', newNumFormule);
-        if (this.formRows.length === 0 || this.formRows[0].num_formule === null) {
-          this.formRows[0].num_formule = newNumFormule;
-        }
-      } catch (error) {
-        console.error('Erreur lors de la récupération du dernier ID de la formule', error);
-      }
-    },
-
-    async loadRecords() {
-      try {
-        // Assurez-vous que le dernier numéro de formule est chargé
-        const dernierNumFormule = await this.createNewNumCompo();
-
-        // Faites l'appel API en passant le dernier numéro de formule
-        const response = await api.get(`/PPH/composition/filter/${dernierNumFormule}`);
-        this.enregistrements = response.data;
-        console.log('Enregistrements chargés:', this.enregistrements);
-      } catch (error) {
-        console.error('Erreur lors du chargement des enregistrements:', error);
-        // Gérer l'erreur comme il convient
-      }
-    },
-
-    async updateFilteredRecords() {
-      const NumFormule = await this.createNewNumCompo(); // Assurez-vous que cette méthode renvoie le dernier numéro
-
-      const enregistrementsFiltres = this.enregistrements.filter(enregistrement => {
-        return enregistrement.num_formule === NumFormule;
+    addLine() {
+      this.updateControlesRows();
+      this.rows.push({
+        num_formule: this.formuleId ? this.formuleId : this.newId,
+        matiere: '',
+        qté: '',
+        calcul: '',
+        type_appareil: '',
       });
-
-      if (enregistrementsFiltres.length === 0) {
-        // S'il n'y a pas d'enregistrements correspondants, exécutez addRow()
-        this.addRow();
-      } else {
-        // Sinon, mettez à jour formRows avec les enregistrements filtrés
-        this.formRows = enregistrementsFiltres.map(enregistrement => {
-          return {
-            num_formule: enregistrement.num_formule,
-            matiere: enregistrement.matiere,
-            qté: enregistrement.qté,
-            calcul: enregistrement.calcul
-            // ... autres propriétés nécessaires
-          };
-        });
-      }
+      console.log('rows', this.rows);
+    },
+    removeLine(index) {
+      this.rows.splice(index, 1);
+      this.updateControlesRows();
     },
 
-    async addRow() {
-      try {
-        const response = await api.get('/PPH/nouvelle-formule/dernier_id');
-        const dernierId = response.data.dernierId;
-        const newNumFormule = dernierId + 1;
+    openCalculDialog(index) {
+      this.currentRow = this.rows[index];
+      this.calculDialog = true;
+      this.indexRow = index;
+    },
 
-        this.formRows.push({
-          num_formule: newNumFormule,
-          matiere: null,
-          qté: '',
-          calcul: ''
-        });
-      } catch (error) {
-        console.error('Erreur lors de la récupération du dernier ID du modèle Formule', error);
-      }
+    validerCalcul(indexRow) {
+      this.rows[indexRow].calcul = this.currentRow.calcul;
+      this.newChat();
+      this.deleteResponse();
+      this.calculDialog = false;
+    },
+
+    annulerCalcul() {
+      this.newChat();
+      this.deleteResponse();
+      this.calculDialog = false;
+    },
+
+    inputParametre(parametre, indexRow) {
+      this.currentRow.calcul += parametre;
+      this.rows[indexRow].calcul = this.currentRow.calcul;
+    },
+
+    effacerCalcul(indexRow) {
+      this.currentRow.calcul = " ";
+      this.deleteResponse();
+      this.rows[indexRow].calcul = this.currentRow.calcul;
     },
 
     async submitForm() {
       // Récupérez les données de toutes les lignes
       const formData = {
-        compositions: this.formRows.map(row => ({
+        compositions: this.rows.map(row => ({
           num_formule: row.num_formule,
           matiere: row.matiere.id,
           qté: row.qté,
-          calcul: row.calcul
+          calcul: row.calcul,
+          type_apparel: row.type_appareil.id
         })),
       };
 

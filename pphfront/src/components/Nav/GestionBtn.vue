@@ -23,13 +23,8 @@
               </router-link>
             </q-item>
             <q-item clickable v-close-popup class="hover-effect">
-              <router-link to="/balances/" class="pph-link">
-                <q-item-section class="text-cyan-1 hover-effect">Balances électroniques</q-item-section>
-              </router-link>
-            </q-item>
-            <q-item clickable class="hover-effect" v-close-popup>
-              <router-link to="/catalogue/" class="pph-link">
-                <q-item-section class="text-cyan-1 hover-effect">Catalogue</q-item-section>
+              <router-link to="/appareils/" class="pph-link">
+                <q-item-section class="text-cyan-1 hover-effect">Appareils</q-item-section>
               </router-link>
             </q-item>
           </q-list>
@@ -73,16 +68,38 @@
           <q-list class="bg-blue-grey-3">
             <q-item clickable class="hover-effect" v-close-popup>
               <router-link to="/nouvelle-formule/" class="pph-link">
-                <q-item-section class="text-cyan-1 hover-effect">Nouvelle formule</q-item-section>
+                <q-item-section class="text-cyan-1 hover-effect">Créer</q-item-section>
               </router-link>
             </q-item>
             <q-item clickable class="hover-effect" v-close-popup>
               <router-link to="/formules/" class="pph-link">
-                <q-item-section class="text-cyan-1 hover-effect">Formules</q-item-section>
+                <q-item-section class="text-cyan-1 hover-effect">Formules référencées</q-item-section>
               </router-link>
             </q-item>
             <q-item clickable class="hover-effect" v-close-popup>
-              <q-item-section class="text-cyan-1 hover-effect">Cloud</q-item-section>
+              <q-item-section class="text-cyan-1 hover-effect">PPH-Cloud</q-item-section>
+            </q-item>
+          </q-list>
+        </q-menu>
+      </q-item>
+
+      <q-item clickable class="hover-effect">
+        <q-item-section :class="{ 'text-cyan-1': !submenuOpen8, 'text-cyan-4': submenuOpen8, 'hover-effect': true }">Controles</q-item-section>
+        <q-item-section side>
+          <q-icon name="keyboard_arrow_right" />
+        </q-item-section>
+
+        <q-menu anchor="top end" self="top start" @show="submenuOpen8 = true" @hide="submenuOpen8 = false">
+          <q-list class="bg-blue-grey-3">
+            <q-item clickable class="hover-effect" v-close-popup>
+              <router-link :to="{name: 'CreateControles'}" class="pph-link">
+                <q-item-section class="text-cyan-1 hover-effect">Créer</q-item-section>
+              </router-link>
+            </q-item>
+            <q-item clickable class="hover-effect" v-close-popup>
+              <router-link :to="{name: 'ControlesCards'}" class="pph-link">
+                <q-item-section class="text-cyan-1 hover-effect">Contrôles disponibles</q-item-section>
+              </router-link>
             </q-item>
           </q-list>
         </q-menu>
@@ -96,6 +113,11 @@
 
         <q-menu anchor="top end" self="top start" @show="submenuOpen4 = true" @hide="submenuOpen4 = false">
           <q-list class="bg-blue-grey-3">
+            <q-item clickable class="hover-effect" v-close-popup>
+              <router-link to="/stock-preparatoire/" class="pph-link">
+                <q-item-section class="text-cyan-1 hover-effect">Péparatoire</q-item-section>
+              </router-link>
+            </q-item>
             <q-item clickable class="hover-effect" v-close-popup>
               <router-link to="/commande/" class="pph-link">
                 <q-item-section class="text-cyan-1 hover-effect">Commandes</q-item-section>
@@ -121,24 +143,6 @@
       </q-item>
 
       <q-item clickable class="hover-effect">
-        <q-item-section :class="{ 'text-cyan-1': !submenuOpen5, 'text-cyan-4': submenuOpen5, 'hover-effect': true }">Statistiques</q-item-section>
-        <q-item-section side>
-          <q-icon name="keyboard_arrow_right" />
-        </q-item-section>
-
-        <q-menu anchor="top end" self="top start" @show="submenuOpen5 = true" @hide="submenuOpen5 = false">
-          <q-list class="bg-blue-grey-3">
-            <q-item clickable class="hover-effect" v-close-popup>
-              <q-item-section class="text-cyan-1 hover-effect">Bilan</q-item-section>
-            </q-item>
-            <q-item clickable class="hover-effect" v-close-popup>
-              <q-item-section class="text-cyan-1 hover-effect">Requêtes</q-item-section>
-            </q-item>
-          </q-list>
-        </q-menu>
-      </q-item>
-
-      <q-item clickable class="hover-effect">
         <q-item-section :class="{ 'text-cyan-1': !submenuOpen6, 'text-cyan-4': submenuOpen6, 'hover-effect': true }">Tarification</q-item-section>
         <q-item-section side>
           <q-icon name="keyboard_arrow_right" />
@@ -151,6 +155,24 @@
             </q-item>
             <q-item clickable class="hover-effect" v-close-popup>
               <q-item-section class="text-cyan-1 hover-effect">Générer facture</q-item-section>
+            </q-item>
+          </q-list>
+        </q-menu>
+      </q-item>
+
+      <q-item clickable class="hover-effect">
+        <q-item-section :class="{ 'text-cyan-1': !submenuOpen5, 'text-cyan-4': submenuOpen5, 'hover-effect': true }">Statistiques</q-item-section>
+        <q-item-section side>
+          <q-icon name="keyboard_arrow_right" />
+        </q-item-section>
+
+        <q-menu anchor="top end" self="top start" @show="submenuOpen5 = true" @hide="submenuOpen5 = false">
+          <q-list class="bg-blue-grey-3">
+            <q-item clickable class="hover-effect" v-close-popup>
+              <q-item-section class="text-cyan-1 hover-effect">Bilan</q-item-section>
+            </q-item>
+            <q-item clickable class="hover-effect" v-close-popup>
+              <q-item-section class="text-cyan-1 hover-effect">Requêtes</q-item-section>
             </q-item>
           </q-list>
         </q-menu>

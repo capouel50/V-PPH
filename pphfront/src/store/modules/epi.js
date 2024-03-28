@@ -29,6 +29,40 @@ const actions = {
     }
   },
 
+  async addEpis({dispatch}, formData) {
+    try {
+      await api.post('PPH/epi-formules/', formData);
+      dispatch('notifications/showNotification', {
+        message: 'Epi ajouté avec succès',
+        type: 'success'
+      }, {root: true});
+      return Promise.resolve();
+    } catch (error) {
+      dispatch('notifications/showNotification', {
+        message: `Erreur méthode addEpis: ${error}`,
+        type: 'error'
+      }, {root: true});
+      return Promise.reject(error);
+    }
+  },
+
+  async updateEpis({dispatch}, {formData, id}) {
+    try {
+      await api.put(`PPH/epi-formules/${id}/`, formData);
+      dispatch('notifications/showNotification', {
+        message: 'Epi ajouté avec succès',
+        type: 'success'
+      }, {root: true});
+      return Promise.resolve();
+    } catch (error) {
+      dispatch('notifications/showNotification', {
+        message: error,
+        type: 'error'
+      }, {root: true});
+      return Promise.reject(error);
+    }
+  },
+
   async loadEpis({commit, dispatch}) {
     try {
       const response = await api.get('/PPH/epi');
