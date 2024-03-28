@@ -480,7 +480,7 @@ class ArticlesFormulesViewSet(viewsets.ModelViewSet):
             return ArticlesFormulesListSerializer  # Sérialiseur pour les opérations standard
         return ArticlesFormulesReadSerializer  # Sérialiseur pour la lecture
 
-    @action(detail=False, methods=['put'], url_path='update/(?P<num_formule>\d+)')
+    @action(detail=False, methods=['put'], url_path=r'update/(?P<num_formule>\d+)')
     def update_articles_formules_bulk(self, request, num_formule=None):
         with transaction.atomic():
             received_article_ids = [item.get('article') for item in request.data if item.get('article')]
