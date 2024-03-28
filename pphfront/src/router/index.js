@@ -28,7 +28,8 @@ import MatieresCardsReception from "@/components/MatieresPremiere/MatieresCardsR
 import MatieresCardsCommande from "@/components/MatieresPremiere/MatieresCardsCommande.vue";
 import AppareilsCards from "@/components/Appareils/AppareilsCards.vue";
 import CreateAppareil from "@/components/Appareils/CreateAppareil.vue";
-import ChatGptAPI from "@/components/UserHelper/ChatGptAPI.vue";
+import ChatGptAPI from "@/components/V-PPH/ChatGptAPI.vue";
+import SettingsVpph from "@/components/V-PPH/SettingsVpph.vue";
 
 const routes = [
   {
@@ -283,6 +284,12 @@ const routes = [
     path: '/gpt4-api',
     name: 'chatGpt',
     component: ChatGptAPI,
+    props: true,
+  },
+  {
+    path: '/vpph-settings',
+    name: 'settingsAI',
+    component: SettingsVpph,
     props: true,
   },
 ]

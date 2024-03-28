@@ -1,13 +1,25 @@
 import api from '../../../api';
 
 const state = {
-  response: null, // La réponse de ChatGPT
+  profil: [
+    {
+      nom: 'Pharmacien',
+      description: "Tu es un excellent pharmacien, expert en pharmacologie, en chimie, en mathématiques. " +
+          "Tu excelles dans les méthodes de préparation et de contrôle des formules de préparations magistrales et hospitalières en tout genre. " +
+          "Tu es rigoureux, méthodique et tu respectes la réglementation française en vigueur. " +
+          "Tu t'appuies notamment sur les Bonnes pratiques de Fabrication, les Bonnes Pratiques de Préparations Hospitalières, " +
+          "la pharmacopée française et européenne, les études réalisées par les laboratoires pharmaceutiques et tous les textes règlementaires dans le domaine de la santé. ",
+    },
+  ],
+
+  response: null,
   history: null,
 };
 
 const getters = {
   getResponse: state => state.response,
   allHistory: state => state.history,
+  allProfils: state => state.profil,
 };
 
 const actions = {
@@ -62,20 +74,37 @@ const actions = {
   },
 
   async sciteApi() {
-  const { data: result } = await api.get(
-    'https://api.scite.ai/search',{
-      params: {
-        term: "CRISPR"
+    const { data: result } = await api.get(
+      'https://api.scite.ai/search',{
+        params: {
+          term: "CRISPR"
+        }
       }
-    }
-  )
+    )
+    console.log(result)
+  },
 
-  console.log(result)
-}
+  ajouterProfil({ commit }, profil) {
+    commit('addProfil', profil);
+  },
+
+  modifierProfil({ commit }, { index, profil }) {
+    commit('updateProfil', { index, nouveauProfil: profil });
+  },
 
 };
 
 const mutations = {
+  addProfil(state, nouveauProfil) {
+    state.profil.push(nouveauProfil);
+  },
+
+  updateProfil(state, { index, nouveauProfil }) {
+    if (index >= 0 && index < state.profil.length) {
+      state.profil.splice(index, 1, nouveauProfil);
+    }
+  },
+
   setResponse(state, response) {
     state.response = response;
   },

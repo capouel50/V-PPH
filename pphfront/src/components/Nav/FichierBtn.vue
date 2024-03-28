@@ -39,6 +39,11 @@
                 <q-item-section class="text-cyan-1 hover-effect">Utilisateurs</q-item-section>
               </router-link>
             </q-item>
+            <q-item clickable class="hover-effect" v-close-popup>
+              <router-link class="pph-link" to="/vpph-settings/">
+                <q-item-section class="text-cyan-1 hover-effect">V-PPH</q-item-section>
+              </router-link>
+            </q-item>
           </q-list>
         </q-menu>
 
