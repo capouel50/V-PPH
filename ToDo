@@ -47,7 +47,7 @@ Fiches de fabrication :
 - Communication avec balances
 
 Intégration websocket :
-- Notifs instantanées
+- Notifs instantanées (fichier celery.py, init dans hospi et gunicorn dans racine)
 
 Etiquettes :
 - Pictos
