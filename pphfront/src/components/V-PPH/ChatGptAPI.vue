@@ -27,7 +27,7 @@
         </q-input>
       </div>
 
-          <div v-if="ask && !response" class="row justify-center items-center q-mt-xl-lg">
+        <div v-if="ask && !response" class="row justify-center q-mt-xl">
             <atom-spinner
             class="bg-op-8"
             :animation-duration="1000"

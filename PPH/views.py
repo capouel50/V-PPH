@@ -109,6 +109,7 @@ class ChatGPTView(APIView):
             conversation_history.append({"role": "user", "content": user_message})
             conversation_history.append({"role": "assistant", "content": gpt_response})
             request.session['conversation_history'] = conversation_history
+            request.session.modified = True
 
             return Response({"message": gpt_response}, status=status.HTTP_200_OK)
 
