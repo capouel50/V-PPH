@@ -1,5 +1,8 @@
+# Pour le backend en developpement
+web : python manage.py run server
+
 # Pour le backend Django avec Gunicorn
-web: gunicorn Hospi.wsgi --chdir Hospi --config gunicorn_config.py
+# web: gunicorn Hospi.wsgi --chdir Hospi --config gunicorn_config.py
 
 # Pour le back-end avec websocket
 # web: source envhop/bin/activate && uvicorn Hospi.asgi:application --host=0.0.0.0 --port=$PORT
