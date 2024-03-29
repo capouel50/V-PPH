@@ -123,6 +123,8 @@ export default {
 
   async created() {
     this.rows = this.etapesRows;
+    this.newChat();
+    this.question = '';
   },
 
   methods: {

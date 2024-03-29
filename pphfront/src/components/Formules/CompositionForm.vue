@@ -234,6 +234,7 @@ export default {
 
   async created() {
     this.newChat();
+    this.question = '';
     console.log('compoRows', this.compoRows);
       this.matieres = this.allMatieres.map(matiere => ({
         ...matiere,
