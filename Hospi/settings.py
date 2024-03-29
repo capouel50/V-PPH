@@ -60,6 +60,11 @@ INSTALLED_APPS = [
 ASGI_APPLICATION = 'Hospi.asgi.application'
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_NAME = 'PPH_session_id'
+SESSION_COOKIE_SECURE = True  # Pour les tokens d'accès
+SESSION_COOKIE_HTTPONLY = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_AGE = 3600  # Durée de vie du cookie de session en secondes (1 heure)
 
 CACHES = {
     "default": {
