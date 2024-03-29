@@ -376,7 +376,7 @@
           <q-btn flat @click="submitForm" color="green-4" label="Enregistrer" class="btn-flat-success-pph"/>
           <q-btn flat color="red-4" label="Supprimer" class="btn-flat-danger-pph"/>
         </q-btn-group>
-    </div>
+      </div>
     </q-stepper>
   </div>
   </q-page>

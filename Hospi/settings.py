@@ -59,6 +59,8 @@ INSTALLED_APPS = [
 # Utiliser Channels comme backend de communication en temps réel
 ASGI_APPLICATION = 'Hospi.asgi.application'
 
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",

@@ -10,14 +10,16 @@
       animated
     >
       <q-step>
-        Step 1
+        <q-stepper-navigation>
+          <q-btn flat @click="step = 2" color="cyan-4" label="Suivant" class="hover-effect"/>
+        </q-stepper-navigation>
       </q-step>
-      <q-step>
-        Step 2
-      </q-step>
-      <q-step>
-        Step 3
-      </q-step>
+      <div class="row justify-center">
+        <q-btn-group>
+          <q-btn flat @click="submitForm" color="green-4" label="Enregistrer" class="btn-flat-success-pph"/>
+          <q-btn flat color="red-4" label="Supprimer" class="btn-flat-danger-pph"/>
+        </q-btn-group>
+      </div>
     </q-stepper>
   </q-page>
 
