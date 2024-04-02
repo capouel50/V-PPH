@@ -85,7 +85,7 @@ export default {
       },
       question: '',
       ask: false,
-      conversation: [],
+      conversationHistory: [],
     };
   },
   computed: {
@@ -106,9 +106,13 @@ export default {
     async demande() {
       if (this.question.trim()) {
         this.ask = true;
-        await this.askQuestion(this.question);
+        const message = {
+          content: this.question,
+          conversation_history: this.conversationHistory.map(c => c.content)
+        };
+        await this.askQuestion(message);
         await this.getHistory();
-        this.conversation = this.allHistory.conversation_history.slice().reverse();
+        this.conversationHistory = this.allHistory.conversation_history.slice().reverse();
         this.question = '';
         this.ask = false;
       }
@@ -119,6 +123,7 @@ export default {
       this.question= '';
       this.deleteResponse();
       this.ask= false;
+      this.conversationHistory = [];
     },
   },
 };
