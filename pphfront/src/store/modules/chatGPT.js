@@ -1,17 +1,11 @@
 import api from '../../../api';
 
 const state = {
-  profil: [
-    {
-      nom: 'Pharmacien',
-      description: "Tu es un excellent pharmacien, expert en pharmacologie, en chimie, en mathématiques. " +
-          "Tu excelles dans les méthodes de préparation et de contrôle des formules de préparations magistrales et hospitalières en tout genre. " +
-          "Tu es rigoureux, méthodique et tu respectes la réglementation française en vigueur. " +
-          "Tu t'appuies notamment sur les Bonnes pratiques de Fabrication, les Bonnes Pratiques de Préparations Hospitalières, " +
-          "la pharmacopée française et européenne, les études réalisées par les laboratoires pharmaceutiques et tous les textes règlementaires dans le domaine de la santé. ",
-    },
-  ],
-
+  vpph: [],
+  profil: [],
+  competences: [],
+  situations: [],
+  personnas: [],
   response: null,
   history: null,
 };
@@ -20,13 +14,14 @@ const getters = {
   getResponse: state => state.response,
   allHistory: state => state.history,
   allProfils: state => state.profil,
+  getVpph: state => state.vpph,
 };
 
 const actions = {
   async askQuestion({ commit, dispatch }, messageSent) {
     try {
       commit('deleteResponse');
-      const response = await api.post('PPH/chatgpt/', { message: messageSent });
+      const response = await api.post('PPH/chatgpt/', messageSent);
       commit('setResponse', response.data.message);
     } catch (error) {
       // Exemple de gestion des erreurs plus détaillée
@@ -61,6 +56,36 @@ const actions = {
     }
   },
 
+  async saveVpph({dispatch}, {id, formData}) {
+    try {
+      await api.patch(`PPH/personnas/${id}/`, formData);
+      dispatch('notifications/showNotification', {
+        message: 'Paramètres V-PPH enregistrés',
+        type: 'succes'
+      }, {root: true});
+    } catch (error) {
+      dispatch('notifications/showNotification', {
+        message: 'Erreur lors de l\'enregistrement des paramètres',
+        type: 'error'
+      }, {root: true});
+    }
+  },
+
+  async loadVpph({commit, dispatch}) {
+    try {
+      const response = await api.get('PPH/personnas/');
+      console.log('VpphData', response.data);
+      commit('setVpph', response.data);
+      return Promise.resolve();
+    } catch (error) {
+      dispatch('notifications/showNotification', {
+        message: 'Erreur lors du chargement de V-PP',
+        type: 'error'
+      }, {root: true});
+      return Promise.reject(error);
+    }
+  },
+
   async newChat(){
     await api.delete('PPH/chatgpt/')
       .then(function (response) {
@@ -85,26 +110,34 @@ const actions = {
   },
 
   ajouterProfil({ commit }, profil) {
+    console.log('ajout', profil);
     commit('addProfil', profil);
   },
 
   modifierProfil({ commit }, { index, profil }) {
+    console.log('modif', profil);
     commit('updateProfil', { index, nouveauProfil: profil });
   },
 
 };
 
 const mutations = {
+
   addProfil(state, nouveauProfil) {
+    console.log('add', nouveauProfil);
     state.profil.push(nouveauProfil);
   },
 
   updateProfil(state, { index, nouveauProfil }) {
     if (index >= 0 && index < state.profil.length) {
+      console.log('update', nouveauProfil);
       state.profil.splice(index, 1, nouveauProfil);
+      state.profil = [...state.profil];
     }
   },
-
+  setVpph(state, response) {
+    state.vpph = response;
+  },
   setResponse(state, response) {
     state.response = response;
   },
