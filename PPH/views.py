@@ -14,8 +14,7 @@ from django.core.mail import send_mail
 from django.db import transaction
 from django.db.models import Count, Sum
 from django.db.models.functions import ExtractMonth, ExtractYear, ExtractWeek
-from django.http import HttpResponseRedirect
-from django.http import JsonResponse
+from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -53,7 +52,7 @@ from PPH.serializers import (
     AppareilsSerializer, FabricantsAppareilsSerializer, InstructionsAppareilsSerializer, TypeAppareilSerializer,
     TypeCommunicationSerializer,
     ArticlesFormulesListSerializer, ArticlesFormulesReadSerializer, ReponseInstructionsSerializer, EtapesSerializer,
-    ControlesSerializer, TypeControleReadSerializer, TypeControleWriteSerializer
+    ControlesSerializer, TypeControleReadSerializer, TypeControleWriteSerializer, PersonnaSerializer
 )
 from .models import CustomUser, Supplier, UserFunction, Contact, \
     TypeMatiere, UniteMesure, Forme, MatierePremiere, TypePrep, \
@@ -62,16 +61,50 @@ from .models import CustomUser, Supplier, UserFunction, Contact, \
     CategorieMatiere, CatalogueImport, Reception, Etablissement, \
     ParametresDemandes, ParametresFiches, Epi, EpiFormules, Appareils, \
     InstructionsAppareils, FabricantsAppareils, ArticlesFormules, TypeAppareil, \
-    TypeCommunication, ReponseInstructions, Etapes, Controles, TypeControle
+    TypeCommunication, ReponseInstructions, Etapes, Controles, TypeControle, Personna
 from .utils import extract_data_from_pdf
-
-logger = logging.getLogger(__name__)
-
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from openai import OpenAI
+
+logger = logging.getLogger(__name__)
+
+class PersonnaAPIView(APIView):
+    def get(self, request):
+        personnas = Personna.objects.all()
+        serializer = PersonnaSerializer(personnas, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = PersonnaSerializer(data=request.data)
+        if serializer.is_valid():
+            personna = serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, pk):
+        personna = self.get_object(pk)
+        serializer = PersonnaSerializer(personna, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request, pk):
+        personna = self.get_object(pk)
+        serializer = PersonnaSerializer(personna, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get_object(self, pk):
+        try:
+            return Personna.objects.get(pk=pk)
+        except Personna.DoesNotExist:
+            raise Http404
 
 class ChatGPTView(APIView):
     conversation_history = []  # Stocke l'historique de la conversation
@@ -82,12 +115,13 @@ class ChatGPTView(APIView):
         user_message = request.data.get("message")
         if not user_message:
             return Response({"error": "Le message ne peut pas être vide."}, status=status.HTTP_400_BAD_REQUEST)
-        conversation_history = request.session.get('conversation_history', [])
+
         # Ajouter l'instruction au prompt et l'historique de la conversation
-        prompt_message = ("Je suis pharmacien hospitalier et tu es un excellent pharmacien, expert en pharmacologie, en chimie, en mathématiques. "
-                          "Tu excelles dans les méthodes de préparation et de contrôle des formules de préparations magistrales et hospitalières en tout genre."
-                          "Tu es rigoureux, méthodique et tu respectes la réglementation française en vigueur."
-                          "Tu t'appuies notamment sur les Bonnes pratiques de Fabrication, les Bonnes Pratiques de Préparations Hospitalières, la pharmacopée française et européenne, les études réalisées par les laboratoires pharmaceutiques et tous les textes règlementaires dans le domaine de la santé. ")
+        prompt_message = (
+            "Je suis pharmacien hospitalier et tu es un excellent pharmacien, expert en pharmacologie, en chimie, en mathématiques. "
+            "Tu excelles dans les méthodes de préparation et de contrôle des formules de préparations magistrales et hospitalières en tout genre."
+            "Tu es rigoureux, méthodique et tu respectes la réglementation française en vigueur."
+            "Tu t'appuies notamment sur les Bonnes pratiques de Fabrication, les Bonnes Pratiques de Préparations Hospitalières, la pharmacopée française et européenne, les études réalisées par les laboratoires pharmaceutiques et tous les textes règlementaires dans le domaine de la santé. ")
 
         # Construction des messages pour l'API en incluant l'historique
         messages = [
@@ -106,10 +140,8 @@ class ChatGPTView(APIView):
 
             gpt_response = response.choices[0].message.content
             # Ajoute la dernière interaction à l'historique
-            conversation_history.append({"role": "user", "content": user_message})
-            conversation_history.append({"role": "assistant", "content": gpt_response})
-            request.session['conversation_history'] = conversation_history
-            request.session.modified = True
+            self.conversation_history.append({"role": "user", "content": user_message})
+            self.conversation_history.append({"role": "assistant", "content": gpt_response})
 
             return Response({"message": gpt_response}, status=status.HTTP_200_OK)
 
@@ -118,14 +150,11 @@ class ChatGPTView(APIView):
             return Response({"error": e}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def get(self, request, *args, **kwargs):
-        # Récupère et retourne l'historique de la conversation stocké dans la session
-        conversation_history = request.session.get('conversation_history', [])
-        return Response({"conversation_history": conversation_history}, status=status.HTTP_200_OK)
+        # Retourne l'historique de la conversation
+        return Response({"conversation_history": self.conversation_history}, status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
-        # Efface l'historique de la conversation de la session
-        if 'conversation_history' in request.session:
-            del request.session['conversation_history']
+        self.conversation_history.clear()  # Efface l'historique de la conversation
         return Response({"message": "L'historique de la conversation a été effacé."}, status=status.HTTP_200_OK)
 
 

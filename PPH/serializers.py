@@ -8,11 +8,15 @@ from .models import CustomUser, Supplier, UserFunction, Contact, \
     Demandes, Fiches, Service, Conditionnement, CategorieMatiere, CatalogueImport, \
     Reception, Etablissement, ParametresDemandes, ParametresFiches, Epi, EpiFormules, \
     Appareils, FabricantsAppareils, InstructionsAppareils, TypeAppareil, TypeCommunication, \
-    ArticlesFormules, ReponseInstructions, Controles, Etapes, TypeControle
+    ArticlesFormules, ReponseInstructions, Controles, Etapes, TypeControle, Personna
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+class PersonnaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Personna
+        fields = ['id', 'profil', 'competences', 'situations', 'personnas']
 
 class CustomRegisterSerializer(RegisterSerializer):
     first_name = serializers.CharField()

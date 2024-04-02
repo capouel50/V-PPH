@@ -21,6 +21,7 @@ const actions = {
   async askQuestion({ commit, dispatch }, messageSent) {
     try {
       commit('deleteResponse');
+      console.log('message', messageSent);
       const response = await api.post('PPH/chatgpt/', messageSent);
       commit('setResponse', response.data.message);
     } catch (error) {

@@ -6,8 +6,14 @@ from .utils import convert_quantity
 from django.db import transaction
 from datetime import timedelta
 from django.db.models import JSONField
-class Etablissement(models.Model):
 
+class Personna(models.Model):
+    profil = models.JSONField(null=True)
+    competences = models.JSONField(null=True)
+    situations = models.JSONField(null=True)
+    personnas = models.JSONField(blank=True, null=True)
+
+class Etablissement(models.Model):
     nom_long = models.CharField(max_length=100, unique=True)
     nom_court = models.CharField(max_length=100, unique=True)
     address = models.CharField(max_length=100, blank=True)

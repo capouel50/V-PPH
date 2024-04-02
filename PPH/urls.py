@@ -8,7 +8,7 @@ from .views import (
     DemandesViewSet, FichesViewSet, FichesSemaine, FichesMois, ConditionnementViewSet, CategorieMatiereViewSet,
     CatalogueImportViewSet, ReceptionViewSet, EtablissementViewSet, ParametresDemandesViewSet, ParametresFichesViewSet,
     EpiViewSet, EpiFormulesViewSet, AppareilsViewSet, InstructionsAppareilsViewSet, ArticlesFormulesViewSet, TypeCommunicationViewSet,
-    TypeAppareilViewSet, ReponseInstructionsViewSet, EtapesViewSet, ControlesViewSet, TypeControleViewSet, ChatGPTView
+    TypeAppareilViewSet, ReponseInstructionsViewSet, EtapesViewSet, ControlesViewSet, TypeControleViewSet, ChatGPTView, PersonnaAPIView
 )
 from PPH import views
 from django.conf import settings
@@ -55,6 +55,8 @@ router.register(r'type-controle', TypeControleViewSet)
 router.register(r'articles-formules/update/<int:num_formule>/', ArticlesFormulesViewSet)
 
 urlpatterns = [
+    path('personnas/', PersonnaAPIView.as_view(), name='personnas'),
+    path('personnas/<int:pk>/', PersonnaAPIView.as_view(), name='personna-detail'),
     path('chatgpt/', ChatGPTView.as_view(), name='chatgpt'),
     path('reset-data/', views.reset_data, name='reset_data'),
     path('fiches-mois/', FichesMois.as_view(), name='fiches-mois'),

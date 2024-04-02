@@ -46,7 +46,7 @@
           <q-btn flat icon="restart_alt" color="purple-4" class="hover-effect absolute-top-right q-mt-sm" @click.stop="newGpt">
             <q-tooltip class="bg-blue-grey-4">Nouvelle conversation</q-tooltip>
           </q-btn>
-          <div v-for="(message, index) in conversation" :key="index">
+          <div v-for="(message, index) in conversationHistory" :key="index">
             <div class="text-purple-4 text-subtitle2">{{ message.role === 'user' ? user.firstName : 'V-PPH' }}:</div>
             <div class="q-mb-xs">{{ message.content }}</div>
           </div>
@@ -106,11 +106,9 @@ export default {
     async demande() {
       if (this.question.trim()) {
         this.ask = true;
-        const message = {
-          content: this.question,
-          conversation_history: this.conversationHistory.map(c => c.content)
-        };
-        await this.askQuestion(message);
+        const messageSent = { message: this.question.trim() };
+        await this.askQuestion(messageSent);
+        console.log(messageSent);
         await this.getHistory();
         this.conversationHistory = this.allHistory.conversation_history.slice().reverse();
         this.question = '';

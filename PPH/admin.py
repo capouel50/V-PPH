@@ -4,7 +4,7 @@ from .models import (CustomUser, UserFunction, Supplier, TypeMatiere, \
     Catalogue, Voie, ParametresPrep, ParametresFormules, Demandes, Fiches, Service, \
     Conditionnement, CategorieMatiere, CatalogueImport, Reception, Etablissement, \
     ParametresDemandes, ParametresFiches, Appareils, FabricantsAppareils, InstructionsAppareils, ReponseInstructions, \
-    TypeAppareil, TypeCommunication, Epi, EpiFormules, ArticlesFormules, Etapes, Controles, TypeControle)
+    TypeAppareil, TypeCommunication, Epi, EpiFormules, ArticlesFormules, Etapes, Controles, TypeControle, Personna)
 
 class CustomUserAdmin(admin.ModelAdmin):
     list_display = ('username', 'email', 'first_name', 'last_name', 'function', 'is_active', 'is_staff')
@@ -21,6 +21,7 @@ admin.site.register(Supplier)
 admin.site.register(Etapes)
 admin.site.register(Controles)
 admin.site.register(TypeControle)
+admin.site.register(Personna)
 
 @admin.register(Etablissement)
 class EtablissementAdmin(admin.ModelAdmin):
