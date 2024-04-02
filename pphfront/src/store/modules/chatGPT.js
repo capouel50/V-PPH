@@ -123,6 +123,9 @@ const actions = {
 
 const mutations = {
 
+  addCompetence(state, newCompetence) {
+    state.competences.push(newCompetence);
+  },
   addProfil(state, nouveauProfil) {
     console.log('add', nouveauProfil);
     state.profil.push(nouveauProfil);
